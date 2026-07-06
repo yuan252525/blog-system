@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route, Navigate } from 'react-router-dom';
+import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { I18nProvider } from './i18n/context';
 import { NotificationProvider } from './contexts/NotificationContext';
 import { MainLayout } from './layouts/MainLayout';
@@ -18,7 +18,7 @@ import { EditPostPage } from './pages/admin/EditPostPage';
 function App() {
   return (
     <I18nProvider>
-      <BrowserRouter>
+      <HashRouter>
         <NotificationProvider>
           <Routes>
             <Route element={<MainLayout />}>
@@ -42,7 +42,7 @@ function App() {
             </Route>
           </Routes>
         </NotificationProvider>
-      </BrowserRouter>
+      </HashRouter>
     </I18nProvider>
   );
 }
