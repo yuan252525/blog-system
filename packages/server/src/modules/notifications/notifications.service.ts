@@ -3,7 +3,7 @@ import { PrismaService } from '../../database/prisma.service.js';
 import type { RedisClient } from '../../redis/redis.module.js';
 import type { QueryNotificationsDto } from './notifications.dto.js';
 
-export type NotificationType = 'COMMENT_REPLY' | 'POST_LIKE' | 'COMMENT_LIKE';
+export type NotificationType = 'COMMENT_REPLY' | 'POST_LIKE' | 'COMMENT_LIKE' | 'CHAT_MENTION';
 
 export interface CreateNotificationInput {
   type: NotificationType;

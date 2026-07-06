@@ -62,9 +62,8 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
         return;
       }
 
-      const jwt = token.startsWith('Bearer ') ? token.slice(7) : token;
-      // JWT 验证延迟到 connection 之后用 subscribe 消息
-      // 这里先接受连接，认证通过 auth 消息
+      // JWT 验证延迟到 connection 之后用 auth 消息 + WsJwtAuthGuard 完成
+      // 这里先接受连接
       this.logger.log(`Client connected: ${client.id}`);
     } catch (err) {
       this.logger.error('Connection error', err);
@@ -76,23 +75,23 @@ export class NotificationsGateway implements OnGatewayConnection, OnGatewayDisco
   @SubscribeMessage('auth')
   async handleAuth(
     @ConnectedSocket() client: Socket,
-    @MessageBody() data: { token: string },
+    @MessageBody() _data: { token: string },
   ): Promise<void> {
-    // 认证通过后由 Guard 填充 client.data.user
-    // 这里做简化处理：直接用传入的 userId
-    const userId = client.data?.user?.id || data.token; // fallback
-    client.data.userId = client.data?.user?.id;
+    // 认证通过后由 WsJwtAuthGuard 填充 client.data.user = jwtPayload
+    // jwtPayload 结构: { sub: userId, username: string, iat, exp }
+    const userId = client.data?.user?.sub;
+    client.data.userId = userId;
 
-    if (client.data.userId) {
-      if (!this.userSockets.has(client.data.userId)) {
-        this.userSockets.set(client.data.userId, new Set());
+    if (userId) {
+      if (!this.userSockets.has(userId)) {
+        this.userSockets.set(userId, new Set());
       }
-      this.userSockets.get(client.data.userId)!.add(client.id);
-      this.logger.log(`User ${client.data.userId} authenticated on socket ${client.id}`);
+      this.userSockets.get(userId)!.add(client.id);
+      this.logger.log(`User ${userId} authenticated on socket ${client.id}`);
 
       // 推送当前未读数
       try {
-        const { count } = await this.notificationsService.getUnreadCount(client.data.userId);
+        const { count } = await this.notificationsService.getUnreadCount(userId);
         client.emit('unread_count', { count });
       } catch {
         // silent

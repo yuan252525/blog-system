@@ -5,7 +5,7 @@ import { useTranslation } from '../i18n/context';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationBell } from './NotificationBell';
 import { ConfirmDialog } from './ConfirmDialog';
-import { Menu, X, PenSquare, User } from 'lucide-react';
+import { Menu, X, PenSquare, User, MessageSquare } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -56,6 +56,13 @@ export function Navbar() {
                   >
                     <PenSquare className="h-4 w-4" />
                     {t('nav.write')}
+                  </Link>
+                  <Link
+                    to="/chat"
+                    className="rounded-lg px-3.5 py-2 text-sm font-medium text-neutral-600 hover:text-brand-600 hover:bg-brand-50 transition-colors flex items-center gap-1.5"
+                  >
+                    <MessageSquare className="h-4 w-4" />
+                    {t('chat.title')}
                   </Link>
                   <Link
                     to="/admin/posts"
@@ -132,6 +139,13 @@ export function Navbar() {
                     className="block rounded-lg px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
                   >
                     ✍️ {t('nav.write')}
+                  </Link>
+                  <Link
+                    to="/chat"
+                    onClick={closeMobile}
+                    className="block rounded-lg px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                  >
+                    💬 {t('chat.title')}
                   </Link>
                   <Link
                     to="/admin/posts"

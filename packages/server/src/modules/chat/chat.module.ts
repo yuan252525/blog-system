@@ -1,17 +1,22 @@
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
+import { MulterModule } from '@nestjs/platform-express';
 import { PrismaModule } from '../../database/prisma.module.js';
 import { RedisModule } from '../../redis/redis.module.js';
-import { NotificationsController } from './notifications.controller.js';
-import { NotificationsService } from './notifications.service.js';
-import { NotificationsGateway } from './notifications.gateway.js';
-import { WsJwtAuthGuard } from '../../common/guards/ws-jwt-auth.guard.js';
+import { NotificationsModule } from '../notifications/notifications.module.js';
+import { ChatController } from './chat.controller.js';
+import { ChatService } from './chat.service.js';
+import { ChatGateway } from './chat.gateway.js';
 
 @Module({
   imports: [
     PrismaModule,
     RedisModule,
+    NotificationsModule,
+    MulterModule.register({
+      limits: { fileSize: 20 * 1024 * 1024 }, // 聊天文件上限 20MB
+    }),
     JwtModule.registerAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -21,8 +26,8 @@ import { WsJwtAuthGuard } from '../../common/guards/ws-jwt-auth.guard.js';
       }),
     }),
   ],
-  controllers: [NotificationsController],
-  providers: [NotificationsService, NotificationsGateway, WsJwtAuthGuard],
-  exports: [NotificationsService, NotificationsGateway],
+  controllers: [ChatController],
+  providers: [ChatService, ChatGateway],
+  exports: [ChatService],
 })
-export class NotificationsModule {}
+export class ChatModule {}

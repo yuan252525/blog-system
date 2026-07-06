@@ -9,20 +9,24 @@ datasource db {
 }
 
 model User {
-  id                 String         @id @default(uuid())
-  username           String         @unique
-  email              String         @unique
-  passwordHash       String         @map("password_hash")
+  id                 String             @id @default(uuid())
+  username           String             @unique
+  email              String             @unique
+  passwordHash       String             @map("password_hash")
   avatar             String?
   bio                String?
-  createdAt          DateTime       @default(now()) @map("created_at")
-  updatedAt          DateTime       @updatedAt @map("updated_at")
+  createdAt          DateTime           @default(now()) @map("created_at")
+  updatedAt          DateTime           @updatedAt @map("updated_at")
   posts              Post[]
   comments           Comment[]
   likes              Like[]
   commentLikes       CommentLike[]
-  notifications      Notification[] @relation("NotificationRecipient")
-  actorNotifications Notification[] @relation("NotificationActor")
+  notifications      Notification[]     @relation("NotificationRecipient")
+  actorNotifications Notification[]     @relation("NotificationActor")
+  chatMessages       ChatMessage[]
+  chatMentions       ChatMention[]
+  chatRoomMembers    ChatRoomMember[]
+  createdChatRooms   ChatRoom[]         @relation("ChatRoomCreator")
 
   @@map("users")
 }
@@ -191,4 +195,79 @@ model CommentLike {
 
   @@unique([commentId, userId])
   @@map("comment_likes")
+}
+
+// ========== 聊天室 ==========
+
+enum RoomType {
+  GROUP
+  DIRECT
+}
+
+enum MessageType {
+  TEXT
+  IMAGE
+  FILE
+  SYSTEM
+}
+
+model ChatRoom {
+  id          String            @id @default(uuid())
+  name        String
+  description String?
+  type        RoomType          @default(GROUP)
+  createdById String            @map("created_by_id")
+  createdAt   DateTime          @default(now()) @map("created_at")
+  updatedAt   DateTime          @updatedAt @map("updated_at")
+  createdBy   User              @relation("ChatRoomCreator", fields: [createdById], references: [id], onDelete: Cascade)
+  members     ChatRoomMember[]
+  messages    ChatMessage[]
+
+  @@index([updatedAt(sort: Desc)])
+  @@map("chat_rooms")
+}
+
+model ChatRoomMember {
+  id         String    @id @default(uuid())
+  roomId     String    @map("room_id")
+  userId     String    @map("user_id")
+  joinedAt   DateTime  @default(now()) @map("joined_at")
+  lastReadAt DateTime? @map("last_read_at")
+  room       ChatRoom  @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([roomId, userId])
+  @@index([userId])
+  @@map("chat_room_members")
+}
+
+model ChatMessage {
+  id        String        @id @default(uuid())
+  content   String
+  type      MessageType   @default(TEXT)
+  fileUrl   String?       @map("file_url")
+  fileName  String?       @map("file_name")
+  fileSize  BigInt?       @map("file_size")
+  mimeType  String?       @map("mime_type")
+  roomId    String        @map("room_id")
+  userId    String        @map("user_id")
+  createdAt DateTime      @default(now()) @map("created_at")
+  room      ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  mentions  ChatMention[]
+
+  @@index([roomId, createdAt(sort: Desc)])
+  @@index([userId])
+  @@map("chat_messages")
+}
+
+model ChatMention {
+  id        String      @id @default(uuid())
+  messageId String      @map("message_id")
+  userId    String      @map("user_id")
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId])
+  @@map("chat_mentions")
 }

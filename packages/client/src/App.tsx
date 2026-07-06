@@ -14,6 +14,7 @@ import { EditProfilePage } from './pages/EditProfilePage';
 import { AdminPostsPage } from './pages/admin/AdminPostsPage';
 import { CreatePostPage } from './pages/admin/CreatePostPage';
 import { EditPostPage } from './pages/admin/EditPostPage';
+import { ChatPage } from './pages/ChatPage';
 
 function App() {
   return (
@@ -38,6 +39,7 @@ function App() {
                 <Route path="/profile" element={<ProfilePage />} />
                 <Route path="/profile/edit" element={<EditProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
+                <Route path="/chat" element={<ChatPage />} />
               </Route>
             </Route>
           </Routes>

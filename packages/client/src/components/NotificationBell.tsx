@@ -85,6 +85,9 @@ export function NotificationBell() {
 
   // 获取通知链接
   const getNotificationLink = (notif: Notification) => {
+    if (notif.type === 'CHAT_MENTION') {
+      return notif.commentId ? `/chat?room=${notif.commentId}` : '/chat';
+    }
     const slug = notif.post?.slug || notif.postId;
     if (slug) {
       if (notif.commentId) {
@@ -104,6 +107,8 @@ export function NotificationBell() {
         return '❤️';
       case 'COMMENT_LIKE':
         return '👍';
+      case 'CHAT_MENTION':
+        return '📢';
       default:
         return '🔔';
     }
