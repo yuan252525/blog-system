@@ -1,0 +1,11 @@
+node_modules/
+dist/
+.env
+.env.local
+*.log
+.DS_Store
+coverage/
+backups/
+package-lock.json
+*.tar.gz
+*.dump

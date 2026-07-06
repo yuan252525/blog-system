@@ -1,0 +1,67 @@
+import { NestFactory } from '@nestjs/core';
+import { ValidationPipe } from '@nestjs/common';
+import bodyParser from 'body-parser';
+import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
+import { AppModule } from './app.module.js';
+import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
+
+async function bootstrap() {
+  const app = await NestFactory.create(AppModule, { bodyParser: false });
+
+  app.setGlobalPrefix('api/v1');
+
+  app.enableCors({
+    origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
+    credentials: true,
+  });
+
+  // Express 5 默认 strict:true 会在某些边界情况把 body 变成 "[object Object]"
+  // 改为 strict:false 让 JSON 解析更宽容，同时支持 10MB body
+  app.use(bodyParser.json({ strict: false, limit: '10mb' }));
+
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
+  // 请求日志
+  app.useGlobalInterceptors(new LoggingInterceptor());
+
+  // Swagger / OpenAPI 文档
+  const config = new DocumentBuilder()
+    .setTitle('博客系统 API')
+    .setDescription('博客系统的 RESTful API 接口文档')
+    .setVersion('1.0')
+    .addBearerAuth(
+      {
+        type: 'http',
+        scheme: 'bearer',
+        bearerFormat: 'JWT',
+        name: 'JWT',
+        in: 'header',
+      },
+      'JWT-auth',
+    )
+    .addTag('auth', '认证相关')
+    .addTag('posts', '文章管理')
+    .addTag('tags', '标签管理')
+    .addTag('uploads', '文件上传（断点续传）')
+    .addTag('comments', '评论管理')
+    .addTag('likes', '点赞管理')
+    .addTag('notifications', '消息通知')
+    .build();
+
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('docs', app, document, {
+    swaggerOptions: {
+      persistAuthorization: true,
+    },
+  });
+
+  await app.listen(process.env.PORT ?? 3000);
+  console.log(`📖 Swagger 文档: http://localhost:${process.env.PORT ?? 3000}/docs`);
+}
+bootstrap();

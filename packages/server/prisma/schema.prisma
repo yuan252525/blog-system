@@ -1,0 +1,194 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                 String         @id @default(uuid())
+  username           String         @unique
+  email              String         @unique
+  passwordHash       String         @map("password_hash")
+  avatar             String?
+  bio                String?
+  createdAt          DateTime       @default(now()) @map("created_at")
+  updatedAt          DateTime       @updatedAt @map("updated_at")
+  posts              Post[]
+  comments           Comment[]
+  likes              Like[]
+  commentLikes       CommentLike[]
+  notifications      Notification[] @relation("NotificationRecipient")
+  actorNotifications Notification[] @relation("NotificationActor")
+
+  @@map("users")
+}
+
+model Notification {
+  id        String   @id @default(uuid())
+  type      String
+  message   String
+  isRead    Boolean  @default(false) @map("is_read")
+  createdAt DateTime @default(now()) @map("created_at")
+  userId    String   @map("user_id")
+  actorId   String   @map("actor_id")
+  postId    String?  @map("post_id")
+  commentId String?  @map("comment_id")
+  user      User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
+  actor     User     @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
+  post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@index([actorId])
+  @@map("notifications")
+}
+
+model Post {
+  id            String         @id @default(uuid())
+  title         String
+  slug          String         @unique
+  content       String
+  summary       String?
+  coverImage    String?        @map("cover_image")
+  status        PostStatus     @default(DRAFT)
+  viewCount     Int            @default(0) @map("view_count")
+  publishedAt   DateTime?      @map("published_at")
+  createdAt     DateTime       @default(now()) @map("created_at")
+  updatedAt     DateTime       @updatedAt @map("updated_at")
+  authorId      String         @map("author_id")
+  categoryId    String?        @map("category_id")
+  author        User           @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  category      Category?      @relation(fields: [categoryId], references: [id], onDelete: SetNull)
+  tags          PostTag[]
+  comments      Comment[]
+  likes         Like[]
+  notifications Notification[]
+
+  @@index([authorId])
+  @@index([categoryId])
+  @@index([status, publishedAt(sort: Desc)])
+  @@map("posts")
+}
+
+model Tag {
+  id    String    @id @default(uuid())
+  name  String
+  slug  String    @unique
+  posts PostTag[]
+
+  @@map("tags")
+}
+
+model PostTag {
+  postId String @map("post_id")
+  tagId  String @map("tag_id")
+  post   Post   @relation(fields: [postId], references: [id], onDelete: Cascade)
+  tag    Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([postId, tagId])
+  @@map("post_tags")
+}
+
+enum PostStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model Upload {
+  id            String        @id @default(uuid())
+  filename      String
+  mimeType      String
+  totalSize     BigInt
+  totalChunks   Int
+  uploadedBytes BigInt        @default(0)
+  status        UploadStatus  @default(PENDING)
+  userId        String        @map("user_id")
+  objectKey     String?       @map("object_key")
+  url           String?       @map("url")
+  createdAt     DateTime      @default(now()) @map("created_at")
+  updatedAt     DateTime      @updatedAt @map("updated_at")
+  chunks        UploadChunk[]
+
+  @@index([userId, status])
+  @@map("uploads")
+}
+
+model UploadChunk {
+  id         String  @id @default(uuid())
+  uploadId   String  @map("upload_id")
+  chunkIndex Int     @map("chunk_index")
+  size       BigInt
+  hash       String
+  uploaded   Boolean @default(false)
+  upload     Upload  @relation(fields: [uploadId], references: [id], onDelete: Cascade)
+
+  @@unique([uploadId, chunkIndex])
+  @@map("upload_chunks")
+}
+
+enum UploadStatus {
+  PENDING
+  UPLOADING
+  COMPLETED
+  FAILED
+  CANCELLED
+}
+
+model Category {
+  id          String   @id @default(uuid())
+  name        String   @unique
+  slug        String   @unique
+  description String?
+  postCount   Int      @default(0)
+  createdAt   DateTime @default(now()) @map("created_at")
+  posts       Post[]
+
+  @@map("categories")
+}
+
+model Comment {
+  id        String        @id @default(uuid())
+  content   String
+  createdAt DateTime      @default(now()) @map("created_at")
+  updatedAt DateTime      @updatedAt @map("updated_at")
+  postId    String        @map("post_id")
+  userId    String        @map("user_id")
+  parentId  String?       @map("parent_id")
+  post      Post          @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  parent    Comment?      @relation("CommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies   Comment[]     @relation("CommentReplies")
+  likes     CommentLike[]
+
+  @@index([postId, createdAt])
+  @@index([userId])
+  @@map("comments")
+}
+
+model Like {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  postId    String   @map("post_id")
+  userId    String   @map("user_id")
+  post      Post     @relation(fields: [postId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([postId, userId])
+  @@map("likes")
+}
+
+model CommentLike {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  commentId String   @map("comment_id")
+  userId    String   @map("user_id")
+  comment   Comment  @relation(fields: [commentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([commentId, userId])
+  @@map("comment_likes")
+}

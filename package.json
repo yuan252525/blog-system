@@ -1,0 +1,26 @@
+{
+  "name": "blog-system",
+  "private": true,
+  "scripts": {
+    "dev:server": "pnpm --filter server dev",
+    "dev:client": "pnpm --filter client dev",
+    "dev": "pnpm run --parallel dev:server dev:client",
+    "build:server": "pnpm --filter server build",
+    "build:client": "pnpm --filter client build",
+    "build": "pnpm run build:server && pnpm run build:client",
+    "lint": "pnpm --filter server lint && pnpm --filter client lint",
+    "typecheck": "pnpm --filter server typecheck && pnpm --filter client typecheck",
+    "format": "prettier --write \"packages/**/*.{ts,tsx,json,css}\"",
+    "format:check": "prettier --check \"packages/**/*.{ts,tsx,json,css}\""
+  },
+  "devDependencies": {
+    "prettier": "^3.5.0"
+  },
+  "pnpm": {
+    "onlyBuiltDependencies": [
+      "prisma",
+      "@prisma/client",
+      "@prisma/engines"
+    ]
+  }
+}

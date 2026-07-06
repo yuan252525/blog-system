@@ -1,0 +1,116 @@
+version: "3.8"
+
+# ==================== 生产环境配置 ====================
+# 与 docker-compose.yml 的区别：
+#   - 数据库和 Redis 端口不对外暴露（仅容器内部访问）
+#   - 所有密码通过 .env 注入，不设默认值
+#   - 适用于阿里云 ECS 直接部署
+
+services:
+  # ==================== PostgreSQL ====================
+  postgres:
+    image: postgres:16-alpine
+    container_name: blog-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${DB_USER}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+      POSTGRES_DB: ${DB_NAME:-blog_db}
+    # 生产环境不暴露数据库端口到宿主机
+    expose:
+      - "5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USER} -d ${DB_NAME:-blog_db}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - blog-network
+
+  # ==================== Redis ====================
+  redis:
+    image: redis:7-alpine
+    container_name: blog-redis
+    restart: unless-stopped
+    command: redis-server --appendonly yes --maxmemory 128mb --maxmemory-policy allkeys-lru
+    # 生产环境不暴露 Redis 端口到宿主机
+    expose:
+      - "6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 3s
+      retries: 5
+    networks:
+      - blog-network
+
+  # ==================== NestJS 后端 ====================
+  server:
+    build:
+      context: .
+      dockerfile: packages/server/Dockerfile
+    container_name: blog-server
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-blog_db}?schema=public
+      JWT_SECRET: ${JWT_SECRET}
+      JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
+      CLIENT_URL: ${CLIENT_URL}
+      REDIS_HOST: redis
+      REDIS_PORT: 6379
+    # 仅容器内和宿主机回环访问
+    ports:
+      - "127.0.0.1:3000:3000"
+    networks:
+      - blog-network
+    command: >
+      sh -c "
+        npx prisma migrate deploy --schema=prisma/schema.prisma &&
+        node dist/src/main.js
+      "
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+
+  # ==================== Vite React 前端（Nginx 静态托管） ====================
+  client:
+    build:
+      context: .
+      dockerfile: packages/client/Dockerfile
+      args:
+        VITE_API_URL: ${VITE_API_URL}
+    container_name: blog-client
+    restart: unless-stopped
+    depends_on:
+      - server
+    # 仅宿主机回环访问（通过 Nginx 反代出去）
+    ports:
+      - "127.0.0.1:8080:80"
+    networks:
+      - blog-network
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+
+volumes:
+  pgdata:
+    driver: local
+  redisdata:
+    driver: local
+
+networks:
+  blog-network:
+    driver: bridge
