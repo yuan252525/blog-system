@@ -48,4 +48,15 @@ export const uploadsApi = {
     apiClient.delete<unknown, { uploadId: string; message: string }>(
       `/uploads/${uploadId}`,
     ),
+
+  /** 直接上传单个文件（语音等小文件），返回访问 URL */
+  uploadDirect: (file: Blob, filename: string) => {
+    const formData = new FormData();
+    formData.append('file', file, filename);
+    return apiClient.post<unknown, { url: string; mimeType: string; size: number }>(
+      '/uploads/direct',
+      formData,
+      { headers: { 'Content-Type': 'multipart/form-data' } },
+    );
+  },
 };

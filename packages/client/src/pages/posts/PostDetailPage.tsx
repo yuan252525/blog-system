@@ -134,7 +134,7 @@ export function PostDetailPage() {
           ))}
         </div>
 
-        <h1 className="text-3xl md:text-4xl lg:text-5xl font-bold tracking-tight text-neutral-900 leading-tight">
+        <h1 className="font-serif text-3xl font-extrabold tracking-tight text-neutral-900 leading-tight md:text-4xl lg:text-5xl">
           {post.title}
         </h1>
 

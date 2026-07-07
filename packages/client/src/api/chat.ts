@@ -40,6 +40,11 @@ export interface ChatMessage {
       username: string;
     };
   }[];
+  reactions?: {
+    id: string;
+    type: string;
+    userId: string;
+  }[];
 }
 
 export interface ChatMessagesResponse {

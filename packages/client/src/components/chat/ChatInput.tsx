@@ -1,7 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from 'react';
-import { Send, Smile, Paperclip, Image, X, AtSign } from 'lucide-react';
+import { Send, Smile, Paperclip, Image, X, AtSign, Mic, Square, Type, Loader2 } from 'lucide-react';
 import { EmojiPicker } from './EmojiPicker';
 import { MentionSuggestions } from './MentionSuggestions';
+import { useVoiceRecorder } from '../../hooks/useVoiceRecorder';
+import { uploadsApi } from '../../api/uploads';
 
 interface ChatInputProps {
   onSend: (content: string, type: 'TEXT' | 'IMAGE' | 'FILE', attachments?: {
@@ -36,6 +38,8 @@ export function ChatInput({ onSend, onTyping, onStopTyping, disabled }: ChatInpu
   const inputRef = useRef<HTMLTextAreaElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const typingTimerRef = useRef<NodeJS.Timeout | null>(null);
+  const voice = useVoiceRecorder();
+  const [voiceUploading, setVoiceUploading] = useState(false);
 
   const handleInputChange = useCallback(
     (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -45,7 +49,7 @@ export function ChatInput({ onSend, onTyping, onStopTyping, disabled }: ChatInpu
       // 检测 @ 提及
       const cursorPos = e.target.selectionStart ?? 0;
       const textBeforeCursor = value.slice(0, cursorPos);
-      const atMatch = textBeforeCursor.match(/@(\w*)$/);
+      const atMatch = textBeforeCursor.match(/@([^\s@]*)$/u);
 
       if (atMatch) {
         const rect = e.target.getBoundingClientRect();
@@ -70,7 +74,7 @@ export function ChatInput({ onSend, onTyping, onStopTyping, disabled }: ChatInpu
   const extractMentionIds = useCallback(
     (text: string): string[] => {
       const ids: string[] = [];
-      const regex = /@(\w+)/g;
+      const regex = /@([^\s@]+)/gu;
       let match;
       while ((match = regex.exec(text)) !== null) {
         const userId = mentionedUsers.get(match[1]);
@@ -186,6 +190,54 @@ export function ChatInput({ onSend, onTyping, onStopTyping, disabled }: ChatInpu
     setAttachments((prev) => prev.filter((_, i) => i !== idx));
   }, []);
 
+  // ==================== 语音录制 ====================
+  const handleStartRecording = useCallback(() => {
+    if (!voice.micSupported) return;
+    voice.start();
+  }, [voice]);
+
+  const handleSendVoice = useCallback(async () => {
+    const result = await voice.stop();
+    if (!result) return;
+
+    setVoiceUploading(true);
+    try {
+      const ext = result.mimeType.includes('/')
+        ? result.mimeType.split('/')[1].replace(/[^a-z0-9]/gi, '')
+        : 'webm';
+      const filename = `voice-${Date.now()}.${ext}`;
+      const uploaded = await uploadsApi.uploadDirect(result.blob, filename);
+      onSend(result.transcript || '', 'FILE', {
+        fileUrl: uploaded.url,
+        fileName: filename,
+        fileSize: result.blob.size,
+        mimeType: result.mimeType,
+      });
+    } catch (err) {
+      console.error('语音上传失败:', err);
+    } finally {
+      setVoiceUploading(false);
+    }
+  }, [voice, onSend]);
+
+  const handleTranscribe = useCallback(async () => {
+    const result = await voice.stop();
+    if (result && result.transcript) {
+      setMessage((prev) => (prev ? `${prev} ` : '') + result.transcript);
+      inputRef.current?.focus();
+    }
+  }, [voice]);
+
+  const handleCancelRecording = useCallback(() => {
+    voice.cancel();
+  }, [voice]);
+
+  const formatElapsed = (s: number) => {
+    const m = Math.floor(s / 60);
+    const sec = s % 60;
+    return `${m}:${sec.toString().padStart(2, '0')}`;
+  };
+
   // 自动调整 textarea 高度
   useEffect(() => {
     const textarea = inputRef.current;
@@ -223,78 +275,120 @@ export function ChatInput({ onSend, onTyping, onStopTyping, disabled }: ChatInpu
         </div>
       )}
 
-      <div className="flex items-end gap-2">
-        {/* Emoji & File buttons */}
-        <div className="flex items-center gap-0.5 pb-1">
-          <div className="relative">
-            <button
-              onClick={() => setShowEmoji(!showEmoji)}
-              className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
-              title="Emoji"
-            >
-              <Smile className="h-5 w-5" />
-            </button>
-            {showEmoji && (
-              <div className="absolute bottom-full left-0 mb-2 z-50">
-                <div className="fixed inset-0 z-40" onClick={() => setShowEmoji(false)} />
-                <div className="relative z-50">
-                  <EmojiPicker onSelect={handleEmojiSelect} />
+      {voice.recording ? (
+        <div className="flex items-center gap-3 px-1">
+          <span className="h-2.5 w-2.5 rounded-full bg-red-500 animate-pulse shrink-0" />
+          <span className="text-sm font-medium text-red-500 tabular-nums">{formatElapsed(voice.elapsed)}</span>
+          <span className="flex-1 text-xs text-neutral-400 truncate">
+            {voice.transcript || (voice.speechSupported ? '正在聆听…（实时转写）' : '正在录音…（当前浏览器不支持实时转写）')}
+          </span>
+          <button
+            onClick={handleCancelRecording}
+            className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+            title="Cancel"
+          >
+            <X className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleTranscribe}
+            disabled={!voice.transcript}
+            className="p-2 rounded-lg text-brand-600 hover:bg-brand-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+            title="转文字发送"
+          >
+            <Type className="h-4 w-4" />
+          </button>
+          <button
+            onClick={handleSendVoice}
+            disabled={voiceUploading}
+            className="p-2.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 transition-colors cursor-pointer shrink-0 disabled:opacity-60 disabled:cursor-not-allowed"
+            title="发送语音"
+          >
+            {voiceUploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Square className="h-4 w-4" />}
+          </button>
+        </div>
+      ) : (
+        <div className="flex items-end gap-2">
+          {/* Emoji & File buttons */}
+          <div className="flex items-center gap-0.5 pb-1">
+            <div className="relative">
+              <button
+                onClick={() => setShowEmoji(!showEmoji)}
+                className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+                title="Emoji"
+              >
+                <Smile className="h-5 w-5" />
+              </button>
+              {showEmoji && (
+                <div className="absolute bottom-full left-0 mb-2 z-50">
+                  <div className="fixed inset-0 z-40" onClick={() => setShowEmoji(false)} />
+                  <div className="relative z-50">
+                    <EmojiPicker onSelect={handleEmojiSelect} />
+                  </div>
                 </div>
-              </div>
+              )}
+            </div>
+
+            <button
+              onClick={() => fileInputRef.current?.click()}
+              className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
+              title="Attach image/file"
+            >
+              <Image className="h-5 w-5" />
+            </button>
+
+            <button
+              onClick={handleStartRecording}
+              disabled={!voice.micSupported || voice.recording}
+              className="p-2 rounded-lg text-neutral-400 hover:text-red-500 hover:bg-red-50 disabled:opacity-30 disabled:cursor-not-allowed transition-colors cursor-pointer"
+              title={voice.micSupported ? 'Record voice' : 'Browser does not support voice recording'}
+            >
+              <Mic className="h-5 w-5" />
+            </button>
+
+            <input
+              ref={fileInputRef}
+              type="file"
+              multiple
+              accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"
+              onChange={handleFileSelect}
+              className="hidden"
+            />
+          </div>
+
+          {/* Input area with mention suggestions */}
+          <div className="flex-1 relative">
+            <textarea
+              ref={inputRef}
+              value={message}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder="Type a message... (Shift+Enter for new line, @ to mention)"
+              disabled={disabled}
+              rows={1}
+              className="w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-50 focus:bg-white outline-none transition-all disabled:opacity-50"
+            />
+
+            {mentionState.active && (
+              <MentionSuggestions
+                query={mentionState.query}
+                onSelect={handleMentionSelect}
+                onClose={() => setMentionState({ active: false, query: '', position: { top: 0, left: 0 } })}
+                position={mentionState.position}
+              />
             )}
           </div>
 
+          {/* Send button */}
           <button
-            onClick={() => fileInputRef.current?.click()}
-            className="p-2 rounded-lg text-neutral-400 hover:text-neutral-600 hover:bg-neutral-100 transition-colors cursor-pointer"
-            title="Attach image/file"
+            onClick={handleSend}
+            disabled={disabled || (!message.trim() && attachments.length === 0)}
+            className="p-2.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
+            title="Send (Enter)"
           >
-            <Image className="h-5 w-5" />
+            <Send className="h-5 w-5" />
           </button>
-
-          <input
-            ref={fileInputRef}
-            type="file"
-            multiple
-            accept="image/*,.pdf,.doc,.docx,.txt,.zip,.rar"
-            onChange={handleFileSelect}
-            className="hidden"
-          />
         </div>
-
-        {/* Input area with mention suggestions */}
-        <div className="flex-1 relative">
-          <textarea
-            ref={inputRef}
-            value={message}
-            onChange={handleInputChange}
-            onKeyDown={handleKeyDown}
-            placeholder="Type a message... (Shift+Enter for new line, @ to mention)"
-            disabled={disabled}
-            rows={1}
-            className="w-full resize-none rounded-xl border border-neutral-200 bg-neutral-50 px-4 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-brand-400 focus:ring-2 focus:ring-brand-50 focus:bg-white outline-none transition-all disabled:opacity-50"
-          />
-
-          {mentionState.active && (
-            <MentionSuggestions
-              query={mentionState.query}
-              onSelect={handleMentionSelect}
-              onClose={() => setMentionState({ active: false, query: '', position: { top: 0, left: 0 } })}
-              position={mentionState.position}
-            />
-          )}
-        </div>
-
-        {/* Send button */}
-        <button
-          onClick={handleSend}
-          disabled={disabled || (!message.trim() && attachments.length === 0)}
-          className="p-2.5 rounded-xl bg-brand-600 text-white hover:bg-brand-700 disabled:opacity-40 disabled:cursor-not-allowed transition-colors cursor-pointer shrink-0"
-          title="Send (Enter)"
-        >
-          <Send className="h-5 w-5" />
-        </button>
-      </div>
+      )}
     </div>
   );
 }

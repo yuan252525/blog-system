@@ -50,7 +50,7 @@ export function PostCard({ post }: PostCardProps) {
           </div>
 
           {/* Title */}
-          <h2 className="text-lg md:text-xl font-bold text-neutral-900 group-hover:text-brand-600 transition-colors line-clamp-2 leading-snug">
+          <h2 className="font-serif text-lg font-bold text-neutral-900 line-clamp-2 leading-snug transition-colors group-hover:text-brand-600 md:text-xl">
             {post.title}
           </h2>
 

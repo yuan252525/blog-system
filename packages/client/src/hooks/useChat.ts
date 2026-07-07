@@ -9,6 +9,7 @@ import {
   sendTyping,
   sendStopTyping,
   markRead,
+  reactMessage,
 } from '../api/chatSocket';
 import { chatApi, type ChatRoom, type ChatMessage } from '../api/chat';
 import type { Socket } from 'socket.io-client';
@@ -46,8 +47,6 @@ export function useChat() {
       setMessages(data.messages);
       setHasMore(data.meta.hasMore);
       setCurrentPage(1);
-      // 滚动到底部
-      setTimeout(() => scrollToBottom(), 150);
     });
 
     s.on('new_message', (message: ChatMessage) => {
@@ -56,8 +55,6 @@ export function useChat() {
         if (prev.some((m) => m.id === message.id)) return prev;
         return [...prev, message];
       });
-      // 滚动到底部
-      setTimeout(() => scrollToBottom(), 100);
     });
 
     s.on('user_joined', (data: { userId: string; username: string; roomId: string }) => {
@@ -122,6 +119,15 @@ export function useChat() {
       setLoadingMessages(false);
     });
 
+    s.on(
+      'message_reaction',
+      (data: { messageId: string; reactions: { id: string; type: string; userId: string }[] }) => {
+        setMessages((prev) =>
+          prev.map((m) => (m.id === data.messageId ? { ...m, reactions: data.reactions } : m)),
+        );
+      },
+    );
+
     s.on('error', (err: { event: string; message: string }) => {
       console.error(`Chat error [${err.event}]:`, err.message);
     });
@@ -138,8 +144,9 @@ export function useChat() {
       s.off('online_users');
       s.off('typing');
       s.off('stop_typing');
-      s.off('message_history');
-      s.off('error');
+    s.off('message_history');
+    s.off('message_reaction');
+    s.off('error');
     };
   }, [token, isAuthenticated]);
 
@@ -218,8 +225,17 @@ export function useChat() {
     const nextPage = currentPage + 1;
     setCurrentPage(nextPage);
 
-    socket.emit('load_messages', { roomId: activeRoomId, page: nextPage, limit: 50 });
+    socket.emit('load_messages', { roomId: activeRoomId, page: nextPage, limit: 10 });
   }, [socket, activeRoomId, loadingMessages, hasMore, currentPage]);
+
+  // 切换消息反应（点赞 / 点彩）
+  const toggleReaction = useCallback(
+    (messageId: string, type: 'LIKE' | 'CHEER') => {
+      if (!socket) return;
+      reactMessage(socket, { messageId, type });
+    },
+    [socket],
+  );
 
   // 创建群聊
   const createGroupRoom = useCallback(
@@ -272,18 +288,6 @@ export function useChat() {
     [activeRoomId],
   );
 
-  // 滚动到底部
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  };
-
-  // 新消息时滚动
-  useEffect(() => {
-    if (messages.length > 0) {
-      scrollToBottom();
-    }
-  }, [messages.length]);
-
   // 清理
   useEffect(() => {
     return () => {
@@ -304,6 +308,7 @@ export function useChat() {
     loadingMessages,
     hasMore,
     messagesEndRef,
+    toggleReaction,
     switchRoom,
     handleSendMessage,
     handleTyping,

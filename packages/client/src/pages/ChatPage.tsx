@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useChat } from '../hooks/useChat';
@@ -30,18 +30,22 @@ export function ChatPage() {
     startDirectChat,
     joinGroupRoom,
     leaveRoomAction,
+    toggleReaction,
   } = useChat();
 
   const activeRoom = rooms.find((r) => r.id === activeRoomId);
 
   // 支持 ?room=xxx 查询参数，点击通知时自动跳转到对应聊天室
   const [searchParams] = useSearchParams();
+  const lastUrlRoomRef = useRef<string | null>(null);
   useEffect(() => {
     const roomId = searchParams.get('room');
-    if (roomId && rooms.length > 0 && activeRoomId !== roomId) {
+    // 只在 URL 参数变化（且房间已加载）时同步，避免用户手动切换房间后被拉回
+    if (roomId && rooms.length > 0 && roomId !== lastUrlRoomRef.current) {
+      lastUrlRoomRef.current = roomId;
       switchRoom(roomId);
     }
-  }, [searchParams, rooms, activeRoomId, switchRoom]);
+  }, [searchParams, rooms, switchRoom]);
 
   // 邀请弹窗状态
   const [showInvite, setShowInvite] = useState(false);
@@ -247,6 +251,8 @@ export function ChatPage() {
                 onLoadMore={loadMoreMessages}
                 hasMore={hasMore}
                 loadingMore={loadingMessages}
+                onReact={toggleReaction}
+                onReask={handleSendMessage}
               />
 
               {/* Input */}

@@ -47,7 +47,7 @@ export function LoginPage() {
     <div className="flex min-h-[calc(100vh-4rem)] items-center justify-center px-4">
       <div className="w-full max-w-sm">
         <div className="mb-8 text-center">
-          <h1 className="text-2xl font-bold text-neutral-900">{t('auth.loginTitle')}</h1>
+          <h1 className="font-serif text-3xl font-extrabold tracking-tight text-neutral-900">{t('auth.loginTitle')}</h1>
           <p className="mt-2 text-sm text-neutral-500">{t('auth.loginSubtitle')}</p>
         </div>
 

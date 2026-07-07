@@ -12,9 +12,15 @@ export function MainLayout() {
         <Outlet />
       </main>
       {!isChatPage && (
-        <footer className="border-t border-neutral-100 bg-white py-8 mt-16">
-          <div className="container mx-auto max-w-6xl px-4 text-center text-sm text-neutral-400">
-            <p>&copy; {new Date().getFullYear()} My Blog. All rights reserved.</p>
+        <footer className="mt-20 border-t border-line bg-surface py-10">
+          <div className="container mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
+            <span className="font-serif text-lg font-extrabold tracking-tight text-neutral-900">
+              My Blog<span className="text-brand-600">.</span>
+            </span>
+            <span className="font-mono text-xs tracking-wide text-neutral-400">
+              © {new Date().getFullYear()} MY BLOG — ALL RIGHTS RESERVED
+            </span>
+            <span className="font-mono text-xs tracking-wide text-neutral-400">REMOTE / GLOBAL</span>
           </div>
         </footer>
       )}

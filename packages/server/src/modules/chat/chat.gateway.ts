@@ -8,7 +8,7 @@ import {
   MessageBody,
   WsException,
 } from '@nestjs/websockets';
-import { Logger, UseGuards } from '@nestjs/common';
+import { Logger, UseGuards, BadRequestException } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
@@ -130,8 +130,8 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
       const onlineUsers = this.getOnlineUsers(data.roomId);
       client.emit('online_users', { roomId: data.roomId, users: onlineUsers });
 
-      // 发送加入确认（包含消息历史）
-      const history = await this.chatService.getMessages(data.roomId, userId);
+      // 发送加入确认（初始加载 10 条消息历史）
+      const history = await this.chatService.getMessages(data.roomId, userId, 1, 10);
       client.emit('joined_room', {
         roomId: data.roomId,
         messages: history.data,
@@ -246,7 +246,7 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
         data.roomId,
         userId,
         data.page ?? 1,
-        data.limit ?? 50,
+        data.limit ?? 10,
       );
 
       client.emit('message_history', {
@@ -298,6 +298,33 @@ export class ChatGateway implements OnGatewayConnection, OnGatewayDisconnect {
   ): Promise<void> {
     const userId = this.getUserId(client, 'mark_read');
     await this.chatService.markAsRead(userId, data.roomId);
+  }
+
+  // ==================== 消息反应（点赞 / 点彩） ====================
+
+  @SubscribeMessage('react_message')
+  async handleReactMessage(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: { messageId: string; type: 'LIKE' | 'CHEER' },
+  ): Promise<void> {
+    const userId = this.getUserId(client, 'react_message');
+
+    try {
+      if (!data.messageId || (data.type !== 'LIKE' && data.type !== 'CHEER')) {
+        throw new BadRequestException('Invalid reaction payload');
+      }
+
+      const reactions = await this.chatService.toggleReaction(userId, data.messageId, data.type);
+      const { roomId } = await this.chatService.getMessageRoomId(data.messageId);
+
+      // 广播给房间内所有用户（含发送者），保证点赞/点彩实时同步
+      this.server.to(roomId).emit('message_reaction', {
+        messageId: data.messageId,
+        reactions,
+      });
+    } catch (err) {
+      client.emit('error', { event: 'react_message', message: (err as Error).message });
+    }
   }
 
   // ==================== 辅助方法 ====================

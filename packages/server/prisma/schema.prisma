@@ -25,6 +25,7 @@ model User {
   actorNotifications Notification[]     @relation("NotificationActor")
   chatMessages       ChatMessage[]
   chatMentions       ChatMention[]
+  chatMessageReactions ChatMessageReaction[]
   chatRoomMembers    ChatRoomMember[]
   createdChatRooms   ChatRoom[]         @relation("ChatRoomCreator")
 
@@ -255,10 +256,25 @@ model ChatMessage {
   room      ChatRoom      @relation(fields: [roomId], references: [id], onDelete: Cascade)
   user      User          @relation(fields: [userId], references: [id], onDelete: Cascade)
   mentions  ChatMention[]
+  reactions ChatMessageReaction[]
 
   @@index([roomId, createdAt(sort: Desc)])
   @@index([userId])
   @@map("chat_messages")
+}
+
+model ChatMessageReaction {
+  id        String   @id @default(uuid())
+  messageId String   @map("message_id")
+  userId    String   @map("user_id")
+  type      String   @map("type") // 'LIKE' | 'CHEER'
+  createdAt DateTime @default(now()) @map("created_at")
+  message   ChatMessage @relation(fields: [messageId], references: [id], onDelete: Cascade)
+  user      User       @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([messageId, userId, type])
+  @@index([messageId])
+  @@map("chat_message_reactions")
 }
 
 model ChatMention {

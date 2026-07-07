@@ -15,7 +15,7 @@ import {
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiTags, ApiOperation, ApiBearerAuth, ApiResponse, ApiConsumes } from '@nestjs/swagger';
-import type { Request, Response } from 'express';
+import type { Request, Response, Express } from 'express';
 import { UploadsService } from './uploads.service.js';
 import { InitUploadDto, UploadChunkDto, QueryUploadDto } from './uploads.dto.js';
 import { Public } from '../../common/decorators/public.decorator.js';
@@ -36,6 +36,20 @@ export class UploadsController {
   @ApiResponse({ status: 201, description: '上传初始化成功' })
   initUpload(@Body() dto: InitUploadDto, @Req() req: AuthenticatedRequest) {
     return this.uploadsService.initUpload(dto, req.user.id);
+  }
+
+  /** 直接上传单个文件（语音等小文件）：存 MinIO 并返回访问 URL */
+  @Post('direct')
+  @HttpCode(HttpStatus.CREATED)
+  @ApiOperation({ summary: '直接上传单个文件', description: '单文件直传到 MinIO，返回访问 URL（用于语音等小文件）' })
+  @ApiConsumes('multipart/form-data')
+  @ApiResponse({ status: 201, description: '上传成功' })
+  @UseInterceptors(FileInterceptor('file'))
+  uploadDirect(
+    @UploadedFile() file: Express.Multer.File,
+    @Req() req: AuthenticatedRequest,
+  ) {
+    return this.uploadsService.uploadDirect(file, req.user.id);
   }
 
   /** 上传单个分片（二进制） */
@@ -90,8 +104,8 @@ export class UploadsController {
   @Public()
   @ApiOperation({ summary: '代理下载文件', description: '通过后端代理从 MinIO 获取文件，解决跨主机签名问题' })
   @ApiResponse({ status: 200, description: '文件流' })
-  streamFile(@Param('uploadId') uploadId: string, @Res() res: Response) {
-    return this.uploadsService.streamFile(uploadId, res);
+  streamFile(@Param('uploadId') uploadId: string, @Req() req: Request, @Res() res: Response) {
+    return this.uploadsService.streamFile(uploadId, res, req);
   }
 
   /** 取消上传 */

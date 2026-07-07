@@ -15,6 +15,7 @@ export interface ChatMessageWithRelations {
   createdAt: Date;
   user: { id: string; username: string; avatar: string | null };
   mentions: Array<{ user: { id: string; username: string } }>;
+  reactions: Array<{ id: string; type: string; userId: string }>;
 }
 
 interface CreateRoomInput {
@@ -279,6 +280,9 @@ export class ChatService {
         mentions: {
           include: { user: { select: { id: true, username: true } } },
         },
+        reactions: {
+          select: { id: true, type: true, userId: true },
+        },
       },
     });
 
@@ -292,7 +296,7 @@ export class ChatService {
   }
 
   /** 获取消息历史（分页） */
-  async getMessages(roomId: string, userId: string, page = 1, limit = 50) {
+  async getMessages(roomId: string, userId: string, page = 1, limit = 10) {
     // 验证用户是成员
     const member = await this.prisma.chatRoomMember.findUnique({
       where: { roomId_userId: { roomId, userId } },
@@ -311,6 +315,9 @@ export class ChatService {
           user: { select: { id: true, username: true, avatar: true } },
           mentions: {
             include: { user: { select: { id: true, username: true } } },
+          },
+          reactions: {
+            select: { id: true, type: true, userId: true },
           },
         },
       }),
@@ -433,6 +440,52 @@ export class ChatService {
     }
 
     return { invited: newUserIds.length, skipped: userIds.length - newUserIds.length };
+  }
+
+  /** 切换消息反应（点赞 / 点彩）：已存在则取消，否则新增 */
+  async toggleReaction(
+    userId: string,
+    messageId: string,
+    type: 'LIKE' | 'CHEER',
+  ): Promise<ChatMessageWithRelations['reactions']> {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { roomId: true },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+
+    // 验证用户是房间成员
+    const member = await this.prisma.chatRoomMember.findUnique({
+      where: { roomId_userId: { roomId: message.roomId, userId } },
+    });
+    if (!member) throw new BadRequestException('Not a member of this room');
+
+    const existing = await this.prisma.chatMessageReaction.findUnique({
+      where: { messageId_userId_type: { messageId, userId, type } },
+    });
+
+    if (existing) {
+      await this.prisma.chatMessageReaction.delete({ where: { id: existing.id } });
+    } else {
+      await this.prisma.chatMessageReaction.create({
+        data: { messageId, userId, type },
+      });
+    }
+
+    return this.prisma.chatMessageReaction.findMany({
+      where: { messageId },
+      select: { id: true, type: true, userId: true },
+    });
+  }
+
+  /** 获取消息所属房间（用于广播反应） */
+  async getMessageRoomId(messageId: string): Promise<{ roomId: string }> {
+    const message = await this.prisma.chatMessage.findUnique({
+      where: { id: messageId },
+      select: { roomId: true },
+    });
+    if (!message) throw new NotFoundException('Message not found');
+    return message;
   }
 
   /** 搜索用户（用于 @ 提及和创建私聊） */

@@ -63,6 +63,13 @@ export function markRead(socket: Socket, roomId: string): void {
   socket.emit('mark_read', { roomId });
 }
 
+export function reactMessage(
+  socket: Socket,
+  data: { messageId: string; type: 'LIKE' | 'CHEER' },
+): void {
+  socket.emit('react_message', data);
+}
+
 export function loadMessages(
   socket: Socket,
   roomId: string,

@@ -4,7 +4,7 @@ import * as Minio from 'minio';
 import { PrismaService } from '../../database/prisma.service.js';
 import { InitUploadDto, QueryUploadDto } from './uploads.dto.js';
 import { createHash } from 'crypto';
-import type { Response } from 'express';
+import type { Request, Response, Express } from 'express';
 
 @Injectable()
 export class UploadsService {
@@ -291,8 +291,8 @@ export class UploadsService {
     return { uploadId, url };
   }
 
-  /** 通过 uploadId 代理下载文件（解决 MinIO 预签名 URL 跨主机签名问题） */
-  async streamFile(uploadId: string, res: Response): Promise<void> {
+  /** 通过 uploadId 代理下载文件（解决 MinIO 预签名 URL 跨主机签名问题，支持 Range 以支持音频拖动） */
+  async streamFile(uploadId: string, res: Response, req?: Request): Promise<void> {
     const upload = await this.prisma.upload.findUnique({
       where: { id: uploadId },
     });
@@ -302,16 +302,42 @@ export class UploadsService {
     }
 
     const stat = await this.minioClient.statObject(this.bucket, upload.objectKey);
-    const stream = await this.minioClient.getObject(this.bucket, upload.objectKey);
+    const size = stat.size;
+    const range = req?.headers.range;
 
-    res.set({
+    const baseHeaders: Record<string, string> = {
       'Content-Type': upload.mimeType,
-      'Content-Length': stat.size.toString(),
+      'Accept-Ranges': 'bytes',
       'Content-Disposition': `inline; filename="${encodeURIComponent(upload.filename)}"`,
       'Cache-Control': 'public, max-age=86400',
       'ETag': stat.etag,
-    });
+    };
 
+    if (range) {
+      const [startStr, endStr] = range.replace(/bytes=/, '').split('-');
+      let start = parseInt(startStr, 10);
+      let end = endStr ? parseInt(endStr, 10) : size - 1;
+      if (isNaN(start)) start = 0;
+      if (isNaN(end) || end >= size) end = size - 1;
+      if (start > end) {
+        res.status(416).set({ 'Content-Range': `bytes */${size}` }).end();
+        return;
+      }
+      const chunkSize = end - start + 1;
+      const stream = await this.minioClient.getPartialObject(this.bucket, upload.objectKey, start, chunkSize);
+      res.status(206);
+      res.set({
+        ...baseHeaders,
+        'Content-Range': `bytes ${start}-${end}/${size}`,
+        'Content-Length': String(chunkSize),
+      });
+      stream.pipe(res);
+      return;
+    }
+
+    const stream = await this.minioClient.getObject(this.bucket, upload.objectKey);
+    res.status(200);
+    res.set({ ...baseHeaders, 'Content-Length': size.toString() });
     stream.pipe(res);
   }
 
@@ -349,6 +375,59 @@ export class UploadsService {
     });
 
     return { uploadId, message: 'Upload cancelled' };
+  }
+
+  /** 直接上传单个文件（用于语音等小文件）：存 MinIO 并返回代理访问 URL */
+  async uploadDirect(file: Express.Multer.File, userId: string): Promise<{ url: string; mimeType: string; size: number }> {
+    if (!file) throw new BadRequestException('No file provided');
+    if (!file.buffer || file.size === 0) throw new BadRequestException('Empty file');
+
+    await this.ensureBucket();
+
+    // 从原始文件名或 MIME 推断扩展名
+    let ext = '';
+    if (file.originalname?.includes('.')) {
+      ext = file.originalname.slice(file.originalname.lastIndexOf('.'));
+    } else {
+      const map: Record<string, string> = {
+        'audio/webm': '.webm',
+        'audio/ogg': '.ogg',
+        'audio/mp4': '.m4a',
+        'audio/mpeg': '.mp3',
+        'audio/wav': '.wav',
+        'audio/x-wav': '.wav',
+      };
+      ext = map[file.mimetype] ?? '';
+    }
+    const objectKey = `uploads/${Date.now()}-${Math.random().toString(36).slice(2, 10)}${ext}`;
+
+    await this.minioClient.putObject(
+      this.bucket,
+      objectKey,
+      file.buffer,
+      file.buffer.length,
+      { 'Content-Type': file.mimetype },
+    );
+
+    const apiBase = this.config.get<string>('PUBLIC_API_URL', 'http://localhost:3000/api/v1')!.replace(/\/+$/, '');
+    const upload = await this.prisma.upload.create({
+      data: {
+        filename: file.originalname || 'voice',
+        mimeType: file.mimetype,
+        totalSize: BigInt(file.size),
+        totalChunks: 1,
+        uploadedBytes: BigInt(file.size),
+        status: 'COMPLETED',
+        userId,
+        objectKey,
+        url: '',
+      },
+    });
+
+    const url = `${apiBase}/uploads/${upload.id}/file`;
+    await this.prisma.upload.update({ where: { id: upload.id }, data: { url } });
+
+    return { url, mimeType: file.mimetype, size: file.size };
   }
 
   /** 计算已上传字节数 */

@@ -67,10 +67,11 @@ export function HomePage() {
     <div className="container mx-auto max-w-6xl px-4 py-8 md:py-12">
       {/* Hero section */}
       <div className="mb-10 md:mb-14">
-        <h1 className="text-3xl md:text-4xl font-bold tracking-tight text-neutral-900">
+        <span className="eyebrow mb-4">FEATURED WRITING</span>
+        <h1 className="font-serif text-4xl font-extrabold tracking-tight text-neutral-900 md:text-5xl">
           {t('home.heroTitle')}
         </h1>
-        <p className="mt-3 text-neutral-500 text-base md:text-lg max-w-xl leading-relaxed">
+        <p className="mt-4 max-w-xl text-base leading-relaxed text-neutral-500 md:text-lg">
           {t('home.heroSubtitle')}
         </p>
 
