@@ -278,9 +278,9 @@ export class UploadsService {
       { 'Content-Type': upload.mimeType },
     );
 
-    // 生成代理访问 URL（通过后端流式代理，避免 MinIO 预签名 URL 的主机名绑定问题）
-    const apiBase = this.config.get<string>('PUBLIC_API_URL', 'http://localhost:3000/api/v1')!.replace(/\/+$/, '');
-    const url = `${apiBase}/uploads/${uploadId}/file`;
+    // 存储相对路径（不含主机名），由前端根据自身 API 地址拼接，
+    // 避免写死 localhost/域名导致跨主机/反代/局域网访问时图片无法加载
+    const url = `/api/v1/uploads/${uploadId}/file`;
 
     // 更新状态
     await this.prisma.upload.update({
@@ -409,7 +409,6 @@ export class UploadsService {
       { 'Content-Type': file.mimetype },
     );
 
-    const apiBase = this.config.get<string>('PUBLIC_API_URL', 'http://localhost:3000/api/v1')!.replace(/\/+$/, '');
     const upload = await this.prisma.upload.create({
       data: {
         filename: file.originalname || 'voice',
@@ -424,7 +423,8 @@ export class UploadsService {
       },
     });
 
-    const url = `${apiBase}/uploads/${upload.id}/file`;
+    // 相对路径，由前端拼接主机名（见 resolveAssetUrl）
+    const url = `/api/v1/uploads/${upload.id}/file`;
     await this.prisma.upload.update({ where: { id: upload.id }, data: { url } });
 
     return { url, mimeType: file.mimetype, size: file.size };

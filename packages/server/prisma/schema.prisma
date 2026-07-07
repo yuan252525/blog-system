@@ -28,6 +28,10 @@ model User {
   chatMessageReactions ChatMessageReaction[]
   chatRoomMembers    ChatRoomMember[]
   createdChatRooms   ChatRoom[]         @relation("ChatRoomCreator")
+  moments            Moment[]
+  momentLikes        MomentLike[]
+  momentComments     MomentComment[]    @relation("MomentCommentAuthor")
+  momentCommentReplies MomentComment[]  @relation("MomentCommentReplyTo")
 
   @@map("users")
 }
@@ -42,6 +46,7 @@ model Notification {
   actorId   String   @map("actor_id")
   postId    String?  @map("post_id")
   commentId String?  @map("comment_id")
+  momentId  String?  @map("moment_id")
   user      User     @relation("NotificationRecipient", fields: [userId], references: [id], onDelete: Cascade)
   actor     User     @relation("NotificationActor", fields: [actorId], references: [id], onDelete: Cascade)
   post      Post?    @relation(fields: [postId], references: [id], onDelete: SetNull)
@@ -286,4 +291,55 @@ model ChatMention {
 
   @@unique([messageId, userId])
   @@map("chat_mentions")
+}
+
+// ========== 朋友圈（Moments） ==========
+
+model Moment {
+  id        String           @id @default(uuid())
+  content   String
+  images    String[]
+  createdAt DateTime         @default(now()) @map("created_at")
+  updatedAt DateTime         @updatedAt @map("updated_at")
+  authorId  String           @map("author_id")
+  author    User             @relation(fields: [authorId], references: [id], onDelete: Cascade)
+  likes     MomentLike[]
+  comments  MomentComment[]
+
+  @@index([authorId])
+  @@index([createdAt(sort: Desc)])
+  @@map("moments")
+}
+
+model MomentLike {
+  id        String   @id @default(uuid())
+  createdAt DateTime @default(now()) @map("created_at")
+  momentId  String   @map("moment_id")
+  userId    String   @map("user_id")
+  moment    Moment   @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([momentId, userId])
+  @@index([userId])
+  @@map("moment_likes")
+}
+
+model MomentComment {
+  id            String          @id @default(uuid())
+  content       String
+  createdAt     DateTime        @default(now()) @map("created_at")
+  updatedAt     DateTime        @updatedAt @map("updated_at")
+  momentId      String          @map("moment_id")
+  userId        String          @map("user_id")
+  parentId      String?         @map("parent_id")
+  replyToUserId String?         @map("reply_to_user_id")
+  moment        Moment          @relation(fields: [momentId], references: [id], onDelete: Cascade)
+  user          User            @relation("MomentCommentAuthor", fields: [userId], references: [id], onDelete: Cascade)
+  replyToUser   User?           @relation("MomentCommentReplyTo", fields: [replyToUserId], references: [id], onDelete: SetNull)
+  parent        MomentComment?  @relation("MomentCommentReplies", fields: [parentId], references: [id], onDelete: Cascade)
+  replies       MomentComment[] @relation("MomentCommentReplies")
+
+  @@index([momentId, createdAt])
+  @@index([userId])
+  @@map("moment_comments")
 }

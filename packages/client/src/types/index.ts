@@ -3,3 +3,4 @@ export * from './auth';
 export * from './post';
 export * from './upload';
 export * from './notification';
+export * from './moment';

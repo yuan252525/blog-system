@@ -4,6 +4,7 @@ import bodyParser from 'body-parser';
 import { SwaggerModule, DocumentBuilder } from '@nestjs/swagger';
 import { AppModule } from './app.module.js';
 import { LoggingInterceptor } from './common/interceptors/logging.interceptor.js';
+import { RedisIoAdapter } from './redis-io.adapter.js';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, { bodyParser: false });
@@ -60,6 +61,12 @@ async function bootstrap() {
       persistAuthorization: true,
     },
   });
+
+  // WebSocket 水平扩展：启用 Redis Adapter，
+  // 多实例部署时通知可跨实例广播；Redis 不可用时自动降级为单实例内存模式
+  const redisIoAdapter = new RedisIoAdapter(app);
+  await redisIoAdapter.connectToRedis();
+  app.useWebSocketAdapter(redisIoAdapter);
 
   await app.listen(process.env.PORT ?? 3000);
   console.log(`📖 Swagger 文档: http://localhost:${process.env.PORT ?? 3000}/docs`);

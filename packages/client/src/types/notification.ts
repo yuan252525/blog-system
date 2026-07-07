@@ -1,4 +1,10 @@
-export type NotificationType = 'COMMENT_REPLY' | 'POST_LIKE' | 'COMMENT_LIKE' | 'CHAT_MENTION';
+export type NotificationType =
+  | 'COMMENT_REPLY'
+  | 'POST_LIKE'
+  | 'COMMENT_LIKE'
+  | 'CHAT_MENTION'
+  | 'MOMENT_LIKE'
+  | 'MOMENT_COMMENT';
 
 export interface Notification {
   id: string;

@@ -15,6 +15,7 @@ import { AdminPostsPage } from './pages/admin/AdminPostsPage';
 import { CreatePostPage } from './pages/admin/CreatePostPage';
 import { EditPostPage } from './pages/admin/EditPostPage';
 import { ChatPage } from './pages/ChatPage';
+import { MomentsPage } from './pages/MomentsPage';
 
 function App() {
   return (
@@ -40,6 +41,7 @@ function App() {
                 <Route path="/profile/edit" element={<EditProfilePage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/chat" element={<ChatPage />} />
+              <Route path="/moments" element={<MomentsPage />} />
               </Route>
             </Route>
           </Routes>

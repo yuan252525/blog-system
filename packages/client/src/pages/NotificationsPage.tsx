@@ -56,6 +56,9 @@ export function NotificationsPage() {
     if (notif.type === 'CHAT_MENTION') {
       return notif.commentId ? `/chat?room=${notif.commentId}` : '/chat';
     }
+    if (notif.type === 'MOMENT_LIKE' || notif.type === 'MOMENT_COMMENT') {
+      return '/moments';
+    }
     const slug = notif.post?.slug || notif.postId;
     if (slug) {
       if (notif.commentId) {
@@ -76,6 +79,10 @@ export function NotificationsPage() {
         return '👍';
       case 'CHAT_MENTION':
         return '📢';
+      case 'MOMENT_LIKE':
+        return '❤️';
+      case 'MOMENT_COMMENT':
+        return '💬';
       default:
         return '🔔';
     }

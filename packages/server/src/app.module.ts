@@ -12,6 +12,7 @@ import { CategoriesModule } from './modules/categories/categories.module.js';
 import { LikesModule } from './modules/likes/likes.module.js';
 import { NotificationsModule } from './modules/notifications/notifications.module.js';
 import { ChatModule } from './modules/chat/chat.module.js';
+import { MomentsModule } from './modules/moments/moments.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -30,6 +31,7 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     LikesModule,
     NotificationsModule,
     ChatModule,
+    MomentsModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

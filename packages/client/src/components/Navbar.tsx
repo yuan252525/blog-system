@@ -6,7 +6,7 @@ import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationBell } from './NotificationBell';
 import { ThemeToggle } from './ThemeToggle';
 import { ConfirmDialog } from './ConfirmDialog';
-import { Menu, X, PenSquare, User, MessageSquare, Bell } from 'lucide-react';
+import { Menu, X, PenSquare, User, MessageSquare, Bell, Camera } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -66,6 +66,13 @@ export function Navbar() {
                   >
                     <MessageSquare className="h-4 w-4" />
                     {t('chat.title')}
+                  </Link>
+                  <Link
+                    to="/moments"
+                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t('nav.moments')}
                   </Link>
                   <Link
                     to="/admin/posts"
@@ -153,6 +160,14 @@ export function Navbar() {
                   >
                     <MessageSquare className="h-4 w-4" />
                     {t('chat.title')}
+                  </Link>
+                  <Link
+                    to="/moments"
+                    onClick={closeMobile}
+                    className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                  >
+                    <Camera className="h-4 w-4" />
+                    {t('nav.moments')}
                   </Link>
                   <Link
                     to="/admin/posts"

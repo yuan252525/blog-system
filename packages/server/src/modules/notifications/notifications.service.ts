@@ -3,7 +3,13 @@ import { PrismaService } from '../../database/prisma.service.js';
 import type { RedisClient } from '../../redis/redis.module.js';
 import type { QueryNotificationsDto } from './notifications.dto.js';
 
-export type NotificationType = 'COMMENT_REPLY' | 'POST_LIKE' | 'COMMENT_LIKE' | 'CHAT_MENTION';
+export type NotificationType =
+  | 'COMMENT_REPLY'
+  | 'POST_LIKE'
+  | 'COMMENT_LIKE'
+  | 'CHAT_MENTION'
+  | 'MOMENT_LIKE'
+  | 'MOMENT_COMMENT';
 
 export interface CreateNotificationInput {
   type: NotificationType;
@@ -11,6 +17,7 @@ export interface CreateNotificationInput {
   actorId: string; // 触发者
   postId?: string;
   commentId?: string;
+  momentId?: string;
   message: string;
 }
 
@@ -71,6 +78,7 @@ export class NotificationsService {
         actorId: input.actorId,
         postId: input.postId || null,
         commentId: input.commentId || null,
+        momentId: input.momentId || null,
       },
       include: {
         actor: {

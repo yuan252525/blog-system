@@ -16,6 +16,9 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME:-blog_db}
+    # 调大最大连接数，支撑后端多实例（每实例连接池 ~20）+
+    # 迁移/管理预留，默认 100 在水平扩展时会被迅速打满
+    command: ["postgres", "-c", "max_connections=200", "-c", "shared_buffers=256MB"]
     # 生产环境不暴露数据库端口到宿主机
     expose:
       - "5432"
@@ -63,7 +66,7 @@ services:
     environment:
       NODE_ENV: production
       PORT: 3000
-      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-blog_db}?schema=public
+      DATABASE_URL: postgresql://${DB_USER}:${DB_PASSWORD}@postgres:5432/${DB_NAME:-blog_db}?schema=public&connection_limit=20
       JWT_SECRET: ${JWT_SECRET}
       JWT_EXPIRES_IN: ${JWT_EXPIRES_IN:-7d}
       CLIENT_URL: ${CLIENT_URL}
@@ -74,15 +77,20 @@ services:
       - "127.0.0.1:3000:3000"
     networks:
       - blog-network
+    # 单实例内存上限放宽到 1G，足以支撑数千长连接 + 运行时开销；
+    # 若启用多实例（docker compose up -d --scale server=N），按实例数调整即可
+    mem_limit: 1g
+    healthcheck:
+      test: ["CMD-SHELL", "wget -q -O /dev/null http://localhost:3000/api/v1/tags || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 30s
     command: >
       sh -c "
         npx prisma migrate deploy --schema=prisma/schema.prisma &&
         node dist/src/main.js
       "
-    deploy:
-      resources:
-        limits:
-          memory: 512M
 
   # ==================== Vite React 前端（Nginx 静态托管） ====================
   client:
