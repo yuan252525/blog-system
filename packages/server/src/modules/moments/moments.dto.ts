@@ -6,13 +6,40 @@ import {
   IsInt,
   Min,
   Max,
-  MaxLength,
+  Validate,
+  ValidatorConstraint,
+  ValidatorConstraintInterface,
+  ValidationArguments,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 
+/**
+ * 按 Unicode 码点（而非 UTF-16 单元）计算长度。
+ * 一个 emoji（如 😀）在 JS 字符串中占 2 个 UTF-16 单元，
+ * 用默认 @MaxLength 会被算成 2 个字符，导致误判超长。
+ */
+@ValidatorConstraint({ name: 'maxCodePoints', async: false })
+export class MaxCodePointsConstraint implements ValidatorConstraintInterface {
+  validate(value: unknown, args: ValidationArguments): boolean {
+    if (typeof value !== 'string') return true;
+    const max = (args.constraints[0] as number) ?? 2000;
+    return [...value].length <= max;
+  }
+
+  defaultMessage(args: ValidationArguments): string {
+    const max = (args.constraints[0] as number) ?? 2000;
+    return `内容不能超过 ${max} 个字符`;
+  }
+}
+
+/** 以码点为单位的长度上限（emoji 计为 1 个字符） */
+export function MaxCodePoints(max: number) {
+  return Validate(MaxCodePointsConstraint, [max]);
+}
+
 export class CreateMomentDto {
   @IsString()
-  @MaxLength(2000)
+  @MaxCodePoints(2000)
   content!: string;
 
   @IsOptional()
@@ -24,7 +51,7 @@ export class CreateMomentDto {
 
 export class CommentMomentDto {
   @IsString()
-  @MaxLength(1000)
+  @MaxCodePoints(1000)
   content!: string;
 
   @IsOptional()

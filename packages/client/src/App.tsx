@@ -1,6 +1,7 @@
 import { HashRouter, Routes, Route, Navigate } from 'react-router-dom';
 import { I18nProvider } from './i18n/context';
 import { NotificationProvider } from './contexts/NotificationContext';
+import { MomentsNewProvider } from './contexts/MomentsNewContext';
 import { MainLayout } from './layouts/MainLayout';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { HomePage } from './pages/HomePage';
@@ -22,6 +23,7 @@ function App() {
     <I18nProvider>
       <HashRouter>
         <NotificationProvider>
+          <MomentsNewProvider>
           <Routes>
             <Route element={<MainLayout />}>
               {/* Public routes */}
@@ -45,6 +47,7 @@ function App() {
               </Route>
             </Route>
           </Routes>
+          </MomentsNewProvider>
         </NotificationProvider>
       </HashRouter>
     </I18nProvider>

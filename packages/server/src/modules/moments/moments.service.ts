@@ -82,6 +82,16 @@ export class MomentsService {
     };
   }
 
+  // 检查自某个时间之后是否有新朋友圈（用于红点提示）
+  async hasNew(since?: string) {
+    const sinceDate = since ? new Date(since) : new Date(0);
+    if (Number.isNaN(sinceDate.getTime())) return { hasNew: false };
+    const count = await this.prisma.moment.count({
+      where: { createdAt: { gt: sinceDate } },
+    });
+    return { hasNew: count > 0 };
+  }
+
   async findOne(momentId: string, currentUserId: string) {
     const moment = await this.prisma.moment.findUnique({
       where: { id: momentId },

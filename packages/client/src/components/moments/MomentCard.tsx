@@ -37,7 +37,7 @@ export function MomentCard({
   onDeleteComment,
 }: Props) {
   const { t } = useTranslation();
-  const [showComments, setShowComments] = useState(false);
+  const [showComments, setShowComments] = useState(true);
   const [commentText, setCommentText] = useState('');
   // 记录加载失败的图片下标，避免显示裂图
   const [imgFailed, setImgFailed] = useState<Record<number, boolean>>({});
@@ -84,6 +84,8 @@ export function MomentCard({
         <img
           src={src}
           alt=""
+          loading="lazy"
+          decoding="async"
           className="mt-3 max-h-80 max-w-full cursor-pointer rounded-md object-cover"
           onClick={() => onPreview(src)}
           onError={() => onImgError(0)}
@@ -100,6 +102,8 @@ export function MomentCard({
               key={i}
               src={src}
               alt=""
+              loading="lazy"
+              decoding="async"
               className="aspect-square w-full cursor-pointer rounded-md object-cover transition-transform hover:scale-[1.02]"
               onClick={() => onPreview(src)}
               onError={() => onImgError(i)}

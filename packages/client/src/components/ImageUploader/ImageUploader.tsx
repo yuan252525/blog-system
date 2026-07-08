@@ -10,17 +10,26 @@ interface ImageUploaderProps {
 }
 
 export function ImageUploader({ value, onChange, onUploadComplete }: ImageUploaderProps) {
-  const { tasks, addFile, pauseUpload, resumeUpload, cancelUpload, progress } =
+  const { tasks, addFile, pauseUpload, resumeUpload, cancelUpload, removeTask, progress } =
     useResumableUpload();
 
   const [dragging, setDragging] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
-  /** 当前正在上传的（非完成态）任务 */
-  const activeTasks = Object.values(tasks).filter((t) => t.status !== 'completed');
+  /** 仅识别图片任务，避免 PDF 等其它类型误回显到图片区（与 PdfUploader 共用同一上传任务池） */
+  const isImage = (t: { mimeType?: string }) => (t.mimeType || '').startsWith('image/');
 
-  /** 已完成的任务（可作为封面图候选） */
-  const completedTasks = Object.values(tasks).filter((t) => t.status === 'completed');
+  /** 当前正在上传的（非完成态）图片任务 */
+  const activeTasks = Object.values(tasks).filter((t) => t.status !== 'completed' && isImage(t));
+
+  /** 已完成的图片任务（可作为封面图候选，排除 PDF） */
+  const completedTasks = Object.values(tasks).filter((t) => t.status === 'completed' && isImage(t));
+
+  /** 删除某张已上传图片（同时若该图正是当前封面则清空封面） */
+  const handleRemoveImage = (uploadId: string, url?: string) => {
+    removeTask(uploadId);
+    if (url && url === value) onChange?.('');
+  };
 
   const handleFileSelect = useCallback(
     async (files: FileList | null) => {
@@ -125,20 +134,32 @@ export function ImageUploader({ value, onChange, onUploadComplete }: ImageUpload
           <div className="grid grid-cols-4 gap-2">
             {completedTasks.map((task) =>
               task.url ? (
-                <button
-                  key={task.uploadId}
-                  type="button"
-                  onClick={() => {
-                    onChange?.(task.url!);
-                    onUploadComplete?.(task.url!, task.uploadId);
-                  }}
-                  className="relative rounded overflow-hidden border-2 border-transparent hover:border-primary-500 cursor-pointer"
-                >
-                  <img src={task.url} alt={task.filename} className="w-full h-16 object-cover" />
-                  <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
-                    <CheckCircle className="w-4 h-4 text-white opacity-0 hover:opacity-100" />
-                  </div>
-                </button>
+                <div key={task.uploadId} className="relative">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      onChange?.(task.url!);
+                      onUploadComplete?.(task.url!, task.uploadId);
+                    }}
+                    className="relative block w-full rounded overflow-hidden border-2 border-transparent hover:border-primary-500 cursor-pointer"
+                  >
+                    <img src={task.url} alt={task.filename} className="w-full h-16 object-cover" />
+                    <div className="absolute inset-0 bg-black/0 hover:bg-black/20 transition-colors flex items-center justify-center">
+                      <CheckCircle className="w-4 h-4 text-white opacity-0 hover:opacity-100" />
+                    </div>
+                  </button>
+                  <button
+                    type="button"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      handleRemoveImage(task.uploadId, task.url);
+                    }}
+                    className="absolute top-1 right-1 rounded-full bg-black/50 p-0.5 text-white transition-colors hover:bg-red-500 cursor-pointer"
+                    title="删除图片"
+                  >
+                    <X className="h-3 w-3" />
+                  </button>
+                </div>
               ) : null,
             )}
           </div>

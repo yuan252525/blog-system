@@ -1,11 +1,12 @@
-import { useState } from 'react';
+import { useState, useRef } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 import { useAuthStore } from '../stores/authStore';
 import { authApi } from '../api/auth';
 import { useTranslation } from '../i18n/context';
 import { getErrorMessage } from '../utils/error';
-import { ArrowLeft, Save, Loader2 } from 'lucide-react';
+import { AvatarCropper } from '../components/AvatarCropper';
+import { ArrowLeft, Save, Loader2, Upload, User } from 'lucide-react';
 
 export function EditProfilePage() {
   const { user } = useAuth();
@@ -18,6 +19,8 @@ export function EditProfilePage() {
   const [bio, setBio] = useState(user?.bio ?? '');
   const [saving, setSaving] = useState(false);
   const [error, setError] = useState('');
+  const [cropSrc, setCropSrc] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,12 +63,52 @@ export function EditProfilePage() {
       )}
 
       <form onSubmit={handleSubmit} className="space-y-5">
-        {/* Avatar preview */}
-        {avatar && (
-          <div className="flex justify-center mb-4">
+        {/* Avatar 上传与裁剪 */}
+        <div className="flex flex-col items-center gap-3">
+          {avatar ? (
             <img src={avatar} alt="" className="h-24 w-24 rounded-2xl object-cover" />
-          </div>
-        )}
+          ) : (
+            <div className="flex h-24 w-24 items-center justify-center rounded-2xl bg-neutral-100 text-neutral-400">
+              <User className="h-10 w-10" />
+            </div>
+          )}
+          <button
+            type="button"
+            onClick={() => fileRef.current?.click()}
+            className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-200 px-3 py-1.5 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 cursor-pointer"
+          >
+            <Upload className="h-4 w-4" />
+            {avatar ? '更换头像' : '上传头像'}
+          </button>
+          <input
+            ref={fileRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={(e) => {
+              const f = e.target.files?.[0];
+              e.target.value = '';
+              if (!f) return;
+              if (!f.type.startsWith('image/')) {
+                alert('请选择图片文件');
+                return;
+              }
+              const reader = new FileReader();
+              reader.onload = () => setCropSrc(reader.result as string);
+              reader.readAsDataURL(f);
+            }}
+          />
+          {cropSrc && (
+            <AvatarCropper
+              imageSrc={cropSrc}
+              onCancel={() => setCropSrc(null)}
+              onUploaded={(url) => {
+                setAvatar(url);
+                setCropSrc(null);
+              }}
+            />
+          )}
+        </div>
 
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-1.5">{t('auth.username')}</label>
@@ -74,17 +117,6 @@ export function EditProfilePage() {
             value={username}
             onChange={(e) => setUsername(e.target.value)}
             className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50 outline-none"
-          />
-        </div>
-
-        <div>
-          <label className="block text-sm font-medium text-neutral-700 mb-1.5">{t('profile.avatar')}</label>
-          <input
-            type="text"
-            value={avatar}
-            onChange={(e) => setAvatar(e.target.value)}
-            placeholder={t('profile.avatarPlaceholder')}
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-700 placeholder:text-neutral-300 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50 outline-none"
           />
         </div>
 

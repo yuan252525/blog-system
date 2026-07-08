@@ -1,22 +1,33 @@
-import { useState, useEffect, useCallback } from 'react';
-import { Camera, RefreshCw } from 'lucide-react';
+import { useState, useEffect, useCallback, useRef } from 'react';
+import { Camera, RefreshCw, Loader2 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n/context';
 import { momentsApi } from '../api/moments';
 import type { Moment, CommentMomentPayload } from '../types';
 import { MomentComposer } from '../components/moments/MomentComposer';
 import { MomentCard } from '../components/moments/MomentCard';
+import { useMomentsNew } from '../contexts/MomentsNewContext';
 
 export function MomentsPage() {
   const { user, isAuthenticated } = useAuth();
   const { t } = useTranslation();
+  const { markSeen } = useMomentsNew();
   const [moments, setMoments] = useState<Moment[]>([]);
   const [loading, setLoading] = useState(true);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [refreshing, setRefreshing] = useState(false);
+  const hasMore = page < totalPages;
+
+  // 用 ref 保存最新状态，供 IntersectionObserver 回调读取，避免闭包过期
+  const loadingRef = useRef(false);
+  const pageRef = useRef(1);
+  const totalPagesRef = useRef(1);
+  const sentinelRef = useRef<HTMLDivElement>(null);
 
   const load = useCallback(async (p: number) => {
+    if (loadingRef.current) return; // 防止 observer 在 re-render 前重复触发
+    loadingRef.current = true;
     setLoading(true);
     try {
       const res = await momentsApi.list(p, 10);
@@ -27,6 +38,7 @@ export function MomentsPage() {
       // 静默
     } finally {
       setLoading(false);
+      loadingRef.current = false;
     }
   }, []);
 
@@ -47,6 +59,11 @@ export function MomentsPage() {
   useEffect(() => {
     load(1);
   }, [load]);
+
+  // 进入朋友圈即视为已读，清除红点
+  useEffect(() => {
+    markSeen();
+  }, [markSeen]);
 
   const handleCreated = (moment: Moment) => setMoments((prev) => [moment, ...prev]);
 
@@ -90,9 +107,34 @@ export function MomentsPage() {
     );
   };
 
-  const loadMore = () => {
-    if (page < totalPages && !loading) load(page + 1);
-  };
+  // 同步最新状态到 ref
+  useEffect(() => {
+    loadingRef.current = loading;
+  }, [loading]);
+  useEffect(() => {
+    pageRef.current = page;
+    totalPagesRef.current = totalPages;
+  }, [page, totalPages]);
+
+  // 滚动到底部自动加载下一页
+  useEffect(() => {
+    const el = sentinelRef.current;
+    if (!el || !hasMore) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (
+          entries[0].isIntersecting &&
+          !loadingRef.current &&
+          pageRef.current < totalPagesRef.current
+        ) {
+          load(pageRef.current + 1);
+        }
+      },
+      { rootMargin: '300px' },
+    );
+    observer.observe(el);
+    return () => observer.disconnect();
+  }, [hasMore, load]);
 
   return (
     <div className="container mx-auto max-w-2xl px-4 py-8 md:py-10">
@@ -136,15 +178,23 @@ export function MomentsPage() {
               onDeleteComment={handleDeleteComment}
             />
           ))}
-          {page < totalPages && (
-            <button
-              type="button"
-              onClick={loadMore}
-              disabled={loading}
-              className="mx-auto block rounded-md px-4 py-2 text-sm text-neutral-500 transition-colors hover:text-brand-600 disabled:opacity-50"
+          {hasMore && (
+            <div
+              ref={sentinelRef}
+              className="flex items-center justify-center gap-2 py-6 text-sm text-neutral-400"
             >
-              {loading ? t('common.loading') : t('moments.loadMore')}
-            </button>
+              {loading ? (
+                <>
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                  {t('moments.loadingMore')}
+                </>
+              ) : (
+                t('moments.loadMore')
+              )}
+            </div>
+          )}
+          {!hasMore && moments.length > 0 && (
+            <p className="py-6 text-center text-xs text-neutral-400">{t('moments.noMore')}</p>
           )}
         </div>
       )}

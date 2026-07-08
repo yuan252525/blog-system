@@ -44,6 +44,14 @@ export class MomentsController {
     return this.momentsService.findAll(query, req.user.id);
   }
 
+  @Get('has-new')
+  @ApiBearerAuth('JWT-auth')
+  @ApiOperation({ summary: '是否有新朋友圈', description: '传入上次查看时间 since，返回之后是否有新动态（用于红点提示）' })
+  @ApiResponse({ status: 200, description: '返回 { hasNew: boolean }' })
+  hasNew(@Query('since') since: string, @Req() req: AuthenticatedRequest) {
+    return this.momentsService.hasNew(since);
+  }
+
   @Get(':id')
   @ApiBearerAuth('JWT-auth')
   @ApiOperation({ summary: '获取单条朋友圈详情' })

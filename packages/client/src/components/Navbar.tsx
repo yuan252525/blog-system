@@ -4,6 +4,7 @@ import { useAuth } from '../hooks/useAuth';
 import { useTranslation } from '../i18n/context';
 import { LanguageSwitcher } from './LanguageSwitcher';
 import { NotificationBell } from './NotificationBell';
+import { useMomentsNew } from '../contexts/MomentsNewContext';
 import { ThemeToggle } from './ThemeToggle';
 import { ConfirmDialog } from './ConfirmDialog';
 import { Menu, X, PenSquare, User, MessageSquare, Bell, Camera } from 'lucide-react';
@@ -12,6 +13,7 @@ export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
   const { t } = useTranslation();
   const navigate = useNavigate();
+  const { hasNew: hasNewMoments } = useMomentsNew();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
 
@@ -71,7 +73,12 @@ export function Navbar() {
                     to="/moments"
                     className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
                   >
-                    <Camera className="h-4 w-4" />
+                    <span className="relative">
+                      <Camera className="h-4 w-4" />
+                      {hasNewMoments && (
+                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
+                      )}
+                    </span>
                     {t('nav.moments')}
                   </Link>
                   <Link
@@ -166,7 +173,12 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
                   >
-                    <Camera className="h-4 w-4" />
+                    <span className="relative">
+                      <Camera className="h-4 w-4" />
+                      {hasNewMoments && (
+                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
+                      )}
+                    </span>
                     {t('nav.moments')}
                   </Link>
                   <Link

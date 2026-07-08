@@ -16,6 +16,9 @@ export const momentsApi = {
   list: (page = 1, limit = 10) =>
     apiClient.get<unknown, MomentListResponse>('/moments', { params: { page, limit } }),
 
+  hasNew: (since: string) =>
+    apiClient.get<unknown, { hasNew: boolean }>('/moments/has-new', { params: { since } }),
+
   get: (id: string) => apiClient.get<unknown, Moment>(`/moments/${id}`),
 
   create: (data: CreateMomentPayload) =>

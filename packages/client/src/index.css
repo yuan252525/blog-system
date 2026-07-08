@@ -266,3 +266,16 @@ body {
 @media (max-width: 640px) {
   .prose table { display: block; overflow-x: auto; -webkit-overflow-scrolling: touch; }
 }
+
+/* ================================================================
+   jit-pdf 版权徽章及防篡改提示（按授权隐藏）
+   - .jit-copyright-badge：跳转 jitword.com 的版权徽章
+   - .jit-copyright-integrity-notice / .jit-pdf-copyright-notice：
+     检测到徽章被隐藏/移除时弹出的提示 UI
+   !important 用于压过 jit-pdf 防篡改逻辑可能回填的内联样式。
+   ================================================================ */
+.jit-copyright-badge,
+.jit-copyright-integrity-notice,
+.jit-pdf-copyright-notice {
+  display: none !important;
+}

@@ -1,11 +1,12 @@
 import { useRef, useState } from 'react';
-import { ImagePlus, X, Send } from 'lucide-react';
+import { ImagePlus, X, Send, Smile } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 import { useTranslation } from '../../i18n/context';
 import { uploadsApi } from '../../api/uploads';
 import { momentsApi } from '../../api/moments';
 import { resolveAssetUrl } from '../../utils/url';
 import { ImageViewer } from '../chat/ImageViewer';
+import { EmojiPicker } from '../EmojiPicker';
 import type { Moment } from '../../types';
 
 const MAX_IMAGES = 9;
@@ -67,9 +68,27 @@ export function MomentComposer({ onCreated }: Props) {
   const [images, setImages] = useState<string[]>([]);
   const [uploading, setUploading] = useState(false);
   const [submitting, setSubmitting] = useState(false);
+  const [showEmoji, setShowEmoji] = useState(false);
   // 当前放大预览的图片地址
   const [previewSrc, setPreviewSrc] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  /** 在光标处插入 emoji */
+  const insertEmoji = (emoji: string) => {
+    const el = textareaRef.current;
+    const start = el?.selectionStart ?? content.length;
+    const end = el?.selectionEnd ?? content.length;
+    const next = content.slice(0, start) + emoji + content.slice(end);
+    setContent(next);
+    const pos = start + emoji.length;
+    requestAnimationFrame(() => {
+      if (el) {
+        el.focus();
+        el.setSelectionRange(pos, pos);
+      }
+    });
+  };
 
   const handleFiles = async (files: FileList | null) => {
     if (!files || files.length === 0) return;
@@ -115,6 +134,7 @@ export function MomentComposer({ onCreated }: Props) {
   return (
     <div className="rounded-lg border border-line bg-surface p-4">
       <textarea
+        ref={textareaRef}
         value={content}
         onChange={(e) => setContent(e.target.value)}
         rows={3}
@@ -153,6 +173,24 @@ export function MomentComposer({ onCreated }: Props) {
 
       <div className="mt-3 flex items-center justify-between border-t border-line pt-3">
         <div className="flex items-center gap-1">
+          <div className="relative">
+            <button
+              type="button"
+              onClick={() => setShowEmoji((v) => !v)}
+              className={`flex items-center gap-1.5 rounded-md px-2.5 py-1.5 text-sm transition-colors hover:bg-neutral-100 disabled:cursor-not-allowed disabled:opacity-40 ${
+                showEmoji ? 'text-brand-600' : 'text-neutral-500 hover:text-brand-600'
+              }`}
+            >
+              <Smile className="h-4 w-4" />
+              {t('moments.emoji')}
+            </button>
+            {showEmoji && (
+              <EmojiPicker
+                onSelect={(e) => insertEmoji(e)}
+                onClose={() => setShowEmoji(false)}
+              />
+            )}
+          </div>
           <button
             type="button"
             onClick={() => fileInputRef.current?.click()}
