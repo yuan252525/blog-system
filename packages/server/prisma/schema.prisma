@@ -63,6 +63,7 @@ model Post {
   content       String
   summary       String?
   coverImage    String?        @map("cover_image")
+  pdfUrl        String?        @map("pdf_url")
   status        PostStatus     @default(DRAFT)
   viewCount     Int            @default(0) @map("view_count")
   publishedAt   DateTime?      @map("published_at")

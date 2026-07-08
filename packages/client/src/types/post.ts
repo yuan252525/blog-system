@@ -7,6 +7,7 @@ export interface Post {
   content: string;
   summary: string | null;
   coverImage: string | null;
+  pdfUrl: string | null;
   status: PostStatus;
   viewCount: number;
   publishedAt: string | null;
@@ -41,6 +42,7 @@ export interface CreatePostRequest {
   content: string;
   summary?: string;
   coverImage?: string;
+  pdfUrl?: string;
   status?: PostStatus;
   tags?: string[];
   categoryId?: string;

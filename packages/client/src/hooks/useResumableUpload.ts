@@ -57,7 +57,7 @@ function saveState(state: PersistedState): void {
 
 export interface UseResumableUploadReturn {
   tasks: Record<string, UploadTask>;
-  addFile: (file: File) => Promise<void>;
+  addFile: (file: File) => Promise<string>;
   pauseUpload: (uploadId: string) => void;
   resumeUpload: (uploadId: string) => Promise<void>;
   cancelUpload: (uploadId: string) => Promise<void>;
@@ -119,6 +119,7 @@ export function useResumableUpload(): UseResumableUploadReturn {
       await uploadChunks(initData, file, controller.signal, (patch) =>
         updateTask(initData.uploadId, patch),
       );
+      return initData.uploadId;
     },
     [persist, updateTask],
   );

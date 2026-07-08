@@ -12,7 +12,14 @@ async function bootstrap() {
   app.setGlobalPrefix('api/v1');
 
   app.enableCors({
-    origin: process.env.CLIENT_URL ?? 'http://localhost:5173',
+    // 允许配置的前端域名（生产）；开发环境下放行 localhost 各端口
+    // （Vite 默认 5173，本项目为 5178），否则 jit-pdf 跨端口加载 PDF 会被 CORS 拦截
+    origin: (origin, cb) => {
+      const clientUrl = process.env.CLIENT_URL;
+      if (!origin || origin === clientUrl) return cb(null, true);
+      if (/^https?:\/\/localhost(:\d+)?$/.test(origin)) return cb(null, origin);
+      cb(null, true);
+    },
     credentials: true,
   });
 

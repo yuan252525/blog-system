@@ -7,8 +7,9 @@ import { LikeButton } from '../../components/LikeButton';
 import { LazyImage } from '../../components/LazyImage';
 import { useTranslation } from '../../i18n/context';
 import { getReadingTime } from '../../utils/readingTime';
-import { Calendar, Eye, ArrowLeft, Clock } from 'lucide-react';
+import { Calendar, Eye, ArrowLeft, Clock, X, FileText } from 'lucide-react';
 import type { Post } from '../../types';
+import { PdfViewer } from '../../components/PdfViewer';
 
 export function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -18,6 +19,7 @@ export function PostDetailPage() {
   const [relatedPosts, setRelatedPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [previewOpen, setPreviewOpen] = useState(false);
 
   // 滚动到指定评论（处理 #comment-xxx hash）
   const scrollToComment = useCallback(() => {
@@ -169,11 +171,21 @@ export function PostDetailPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="mt-5">
+        <div className="mt-5 flex flex-wrap items-center gap-3">
           <LikeButton
             postId={post.id}
             initialCount={post._count?.likes ?? 0}
           />
+          {post.pdfUrl && (
+            <button
+              type="button"
+              onClick={() => setPreviewOpen(true)}
+              className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-400 hover:text-brand-600 cursor-pointer"
+            >
+              <FileText className="h-4 w-4" />
+              {t('post.previewPdf')}
+            </button>
+          )}
         </div>
       </header>
 
@@ -262,6 +274,33 @@ export function PostDetailPage() {
           {t('post.backToHome')}
         </Link>
       </div>
+      {/* PDF 预览弹窗 */}
+      {previewOpen && post.pdfUrl && (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 p-4"
+          onClick={() => setPreviewOpen(false)}
+        >
+          <div
+            className="flex h-[85vh] w-full max-w-4xl flex-col overflow-hidden rounded-2xl bg-white shadow-elevated min-h-0"
+            onClick={(e) => e.stopPropagation()}
+          >
+            <div className="flex items-center justify-between border-b border-neutral-200 px-5 py-3">
+              <h3 className="font-semibold text-neutral-900">{t('post.pdfPreview')}</h3>
+              <button
+                type="button"
+                onClick={() => setPreviewOpen(false)}
+                className="cursor-pointer rounded-full p-1.5 text-neutral-400 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                title={t('common.cancel')}
+              >
+                <X className="h-5 w-5" />
+              </button>
+            </div>
+            <div className="relative flex-1 min-h-0 bg-neutral-100">
+              <PdfViewer url={post.pdfUrl} fileName={post.title} />
+            </div>
+          </div>
+        </div>
+      )}
     </article>
   );
 }

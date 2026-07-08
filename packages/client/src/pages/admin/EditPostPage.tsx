@@ -4,6 +4,7 @@ import { postsApi } from '../../api/posts';
 import { categoriesApi, type Category } from '../../api/categories';
 import { TagInput } from '../../components/TagInput';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
+import { PdfUploader } from '../../components/PdfUploader';
 import { useTranslation } from '../../i18n/context';
 import { getErrorMessage } from '../../utils/error';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
@@ -17,6 +18,7 @@ export function EditPostPage() {
   const [content, setContent] = useState('');
   const [summary, setSummary] = useState('');
   const [coverImage, setCoverImage] = useState('');
+  const [pdfUrl, setPdfUrl] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<PostStatus>('DRAFT');
   const [categoryId, setCategoryId] = useState('');
@@ -40,6 +42,7 @@ export function EditPostPage() {
           setContent(post.content);
           setSummary(post.summary ?? '');
           setCoverImage(post.coverImage ?? '');
+          setPdfUrl(post.pdfUrl ?? '');
           setTags(post.tags.map((tag) => tag.name));
           setStatus(post.status);
           setCategoryId(post.category?.id ?? '');
@@ -62,6 +65,7 @@ export function EditPostPage() {
         content,
         summary: summary.trim() || undefined,
         coverImage: coverImage.trim() || undefined,
+        pdfUrl: pdfUrl.trim() || undefined,
         status,
         tags,
         categoryId: categoryId || undefined,
@@ -165,6 +169,12 @@ export function EditPostPage() {
             placeholder="https://example.com/image.jpg"
             className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-700 placeholder:text-neutral-300 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50 outline-none"
           />
+        </div>
+
+        {/* PDF 附件上传 */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">{t('editor.pdfAttachment')}</label>
+          <PdfUploader value={pdfUrl} onChange={setPdfUrl} />
         </div>
 
         {/* Markdown Editor */}

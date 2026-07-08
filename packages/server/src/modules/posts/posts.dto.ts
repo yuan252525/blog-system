@@ -25,6 +25,11 @@ export class CreatePostDto {
   @IsString()
   coverImage?: string;
 
+  @ApiPropertyOptional({ description: 'PDF 附件 URL（上传后返回的相对路径）', example: '/api/v1/uploads/xxx/file' })
+  @IsOptional()
+  @IsString()
+  pdfUrl?: string;
+
   @ApiPropertyOptional({ description: '文章状态', enum: PostStatus, example: 'DRAFT' })
   @IsOptional()
   @IsEnum(PostStatus)
@@ -66,6 +71,11 @@ export class UpdatePostDto {
   @IsOptional()
   @IsString()
   coverImage?: string;
+
+  @ApiPropertyOptional({ description: 'PDF 附件 URL' })
+  @IsOptional()
+  @IsString()
+  pdfUrl?: string;
 
   @ApiPropertyOptional({ description: '文章状态', enum: PostStatus })
   @IsOptional()

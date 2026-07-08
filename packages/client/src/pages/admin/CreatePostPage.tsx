@@ -5,6 +5,7 @@ import { categoriesApi, type Category } from '../../api/categories';
 import { TagInput } from '../../components/TagInput';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { ImageUploader } from '../../components/ImageUploader';
+import { PdfUploader } from '../../components/PdfUploader';
 import { useTranslation } from '../../i18n/context';
 import { getErrorMessage } from '../../utils/error';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
@@ -19,6 +20,7 @@ export function CreatePostPage() {
   const [coverImage, setCoverImage] = useState('');
   const [tags, setTags] = useState<string[]>([]);
   const [status, setStatus] = useState<PostStatus>('DRAFT');
+  const [pdfUrl, setPdfUrl] = useState('');
   const [categoryId, setCategoryId] = useState('');
   const [categories, setCategories] = useState<Category[]>([]);
   const [saving, setSaving] = useState(false);
@@ -39,6 +41,7 @@ export function CreatePostPage() {
         content,
         summary: summary.trim() || undefined,
         coverImage: coverImage.trim() || undefined,
+        pdfUrl: pdfUrl.trim() || undefined,
         status,
         tags: tags.length > 0 ? tags : undefined,
         categoryId: categoryId || undefined,
@@ -112,6 +115,12 @@ export function CreatePostPage() {
             onChange={setCoverImage}
             onUploadComplete={(url) => setCoverImage(url)}
           />
+        </div>
+
+        {/* PDF 附件上传 */}
+        <div>
+          <label className="block text-sm font-medium text-neutral-700 mb-2">{t('editor.pdfAttachment')}</label>
+          <PdfUploader value={pdfUrl} onChange={setPdfUrl} />
         </div>
 
         {/* Markdown Editor */}
