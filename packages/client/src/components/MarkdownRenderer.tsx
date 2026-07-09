@@ -1,7 +1,8 @@
-import ReactMarkdown from 'react-markdown';
+import ReactMarkdown, { type Components } from 'react-markdown';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
+import { MermaidDiagram } from './MermaidDiagram';
 
 const sanitizeSchema = {
   ...defaultSchema,
@@ -28,12 +29,37 @@ interface MarkdownRendererProps {
   content: string;
 }
 
+// 自定义渲染：```mermaid 代码块渲染为流程图，其余代码块保持默认高亮
+const components: Components = {
+  code({ node: _node, className, children, ...props }) {
+    const match = /language-(\w+)/.exec(className || '');
+    if (match?.[1] === 'mermaid') {
+      const code = String(children ?? '').replace(/\n$/, '');
+      return <MermaidDiagram code={code} />;
+    }
+    return (
+      <code className={className} {...props}>
+        {children}
+      </code>
+    );
+  },
+  // mermaid 块不再套用 <pre> 的代码框样式
+  pre({ node: _pre, children }) {
+    const child = Array.isArray(children) ? children[0] : children;
+    const cls =
+      ((child as { props?: { className?: string } } | null)?.props?.className ?? '') || '';
+    if (cls.includes('language-mermaid')) return <>{children}</>;
+    return <pre>{children}</pre>;
+  },
+};
+
 export function MarkdownRenderer({ content }: MarkdownRendererProps) {
   return (
     <article className="prose prose-neutral max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
         rehypePlugins={[[rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+        components={components}
       >
         {content}
       </ReactMarkdown>

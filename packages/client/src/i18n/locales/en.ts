@@ -23,6 +23,7 @@ const en = {
     getStarted: 'Get started',
     profile: 'Profile',
     moments: 'Moments',
+    world: 'Chill World',
     signedInAs: 'Signed in as',
   },
   auth: {

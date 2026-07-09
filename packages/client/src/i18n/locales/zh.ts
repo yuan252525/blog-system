@@ -23,6 +23,7 @@ const zh = {
     getStarted: '开始使用',
     profile: '个人中心',
     moments: '朋友圈',
+    world: '解压小世界',
     signedInAs: '当前登录',
   },
   auth: {

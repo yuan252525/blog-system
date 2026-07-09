@@ -5,6 +5,7 @@ import { categoriesApi, type Category } from '../../api/categories';
 import { TagInput } from '../../components/TagInput';
 import { MarkdownEditor } from '../../components/MarkdownEditor';
 import { PdfUploader } from '../../components/PdfUploader';
+import { ImageUploader } from '../../components/ImageUploader';
 import { useTranslation } from '../../i18n/context';
 import { getErrorMessage } from '../../utils/error';
 import { ArrowLeft, Save, Loader2 } from 'lucide-react';
@@ -159,15 +160,13 @@ export function EditPostPage() {
           className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-700 placeholder:text-neutral-300 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50 outline-none resize-none"
         />
 
-        {/* Cover image URL */}
+        {/* Cover image */}
         <div>
           <label className="block text-sm font-medium text-neutral-700 mb-2">{t('editor.coverImage')}</label>
-          <input
-            type="text"
+          <ImageUploader
             value={coverImage}
-            onChange={(e) => setCoverImage(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-            className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-700 placeholder:text-neutral-300 transition-all focus:border-brand-400 focus:ring-2 focus:ring-brand-50 outline-none"
+            onChange={setCoverImage}
+            onUploadComplete={(url) => setCoverImage(url)}
           />
         </div>
 

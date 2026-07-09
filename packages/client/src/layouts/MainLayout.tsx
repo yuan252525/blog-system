@@ -3,15 +3,15 @@ import { Navbar } from '../components/Navbar';
 
 export function MainLayout() {
   const location = useLocation();
-  const isChatPage = location.pathname === '/chat';
+  const isImmersive = location.pathname === '/chat' || location.pathname === '/world';
 
   return (
-    <div className={`flex flex-col ${isChatPage ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
+    <div className={`flex flex-col ${isImmersive ? 'h-screen overflow-hidden' : 'min-h-screen'}`}>
       <Navbar />
-      <main className={`${isChatPage ? 'flex-1 min-h-0' : 'flex-1 page-enter'}`}>
+      <main className={`${isImmersive ? 'flex-1 min-h-0' : 'flex-1 page-enter'}`}>
         <Outlet />
       </main>
-      {!isChatPage && (
+      {!isImmersive && (
         <footer className="mt-20 border-t border-line bg-surface py-10">
           <div className="container mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-4 sm:flex-row">
             <span className="font-serif text-lg font-extrabold tracking-tight text-neutral-900">

@@ -6,6 +6,7 @@ import {
   IsInt,
   Min,
   Max,
+  MaxLength,
   Validate,
   ValidatorConstraint,
   ValidatorConstraintInterface,

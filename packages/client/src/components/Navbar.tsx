@@ -7,7 +7,7 @@ import { NotificationBell } from './NotificationBell';
 import { useMomentsNew } from '../contexts/MomentsNewContext';
 import { ThemeToggle } from './ThemeToggle';
 import { ConfirmDialog } from './ConfirmDialog';
-import { Menu, X, PenSquare, User, MessageSquare, Bell, Camera } from 'lucide-react';
+import { Menu, X, User, Bell, Feather } from 'lucide-react';
 
 export function Navbar() {
   const { user, isAuthenticated, logout } = useAuth();
@@ -36,8 +36,8 @@ export function Navbar() {
               to="/"
               className="group flex items-center gap-2.5 font-bold tracking-tight transition-opacity hover:opacity-80"
             >
-              <span className="grid h-8 w-8 place-items-center rounded bg-brand-600 text-sm font-extrabold text-white">
-                B
+              <span className="grid h-8 w-8 place-items-center rounded bg-brand-600 text-white">
+                <Feather className="h-4 w-4" />
               </span>
               <span className="hidden font-serif text-xl font-extrabold tracking-tight text-neutral-900 sm:inline">
                 My Blog<span className="text-brand-600">.</span>
@@ -59,27 +59,30 @@ export function Navbar() {
                     to="/admin/posts/new"
                     className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
                   >
-                    <PenSquare className="h-4 w-4" />
                     {t('nav.write')}
                   </Link>
                   <Link
                     to="/chat"
                     className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
                   >
-                    <MessageSquare className="h-4 w-4" />
                     {t('chat.title')}
                   </Link>
                   <Link
                     to="/moments"
                     className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
                   >
-                    <span className="relative">
-                      <Camera className="h-4 w-4" />
+                    <span className="relative inline-flex">
+                      {t('nav.moments')}
                       {hasNewMoments && (
-                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
+                        <span className="absolute -right-2 -top-0 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
                       )}
                     </span>
-                    {t('nav.moments')}
+                  </Link>
+                  <Link
+                    to="/world"
+                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                  >
+                    {t('nav.world')}
                   </Link>
                   <Link
                     to="/admin/posts"
@@ -157,7 +160,6 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
                   >
-                    <PenSquare className="h-4 w-4" />
                     {t('nav.write')}
                   </Link>
                   <Link
@@ -165,7 +167,6 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
                   >
-                    <MessageSquare className="h-4 w-4" />
                     {t('chat.title')}
                   </Link>
                   <Link
@@ -173,13 +174,19 @@ export function Navbar() {
                     onClick={closeMobile}
                     className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
                   >
-                    <span className="relative">
-                      <Camera className="h-4 w-4" />
+                    <span className="relative inline-flex">
+                      {t('nav.moments')}
                       {hasNewMoments && (
-                        <span className="absolute -right-1 -top-1 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
+                        <span className="absolute -right-2 -top-0 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
                       )}
                     </span>
-                    {t('nav.moments')}
+                  </Link>
+                  <Link
+                    to="/world"
+                    onClick={closeMobile}
+                    className="block rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                  >
+                    {t('nav.world')}
                   </Link>
                   <Link
                     to="/admin/posts"
