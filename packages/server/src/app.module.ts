@@ -14,6 +14,9 @@ import { NotificationsModule } from './modules/notifications/notifications.modul
 import { ChatModule } from './modules/chat/chat.module.js';
 import { MomentsModule } from './modules/moments/moments.module.js';
 import { WorldModule } from './modules/world/world.module.js';
+import { GamificationModule } from './modules/gamification/gamification.module.js';
+import { FollowModule } from './modules/follow/follow.module.js';
+import { UsersModule } from './modules/users/users.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -34,6 +37,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     ChatModule,
     MomentsModule,
     WorldModule,
+    GamificationModule,
+    FollowModule,
+    UsersModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

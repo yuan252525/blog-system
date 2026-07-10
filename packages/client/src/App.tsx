@@ -12,6 +12,8 @@ import { CategoryPage } from './pages/posts/CategoryPage';
 import { NotificationsPage } from './pages/NotificationsPage';
 import { ProfilePage } from './pages/ProfilePage';
 import { EditProfilePage } from './pages/EditProfilePage';
+import { LeaderboardPage } from './pages/LeaderboardPage';
+import { UserProfilePage } from './pages/UserProfilePage';
 import { AdminPostsPage } from './pages/admin/AdminPostsPage';
 import { CreatePostPage } from './pages/admin/CreatePostPage';
 import { EditPostPage } from './pages/admin/EditPostPage';
@@ -40,8 +42,10 @@ function App() {
                 <Route path="/admin/posts" element={<AdminPostsPage />} />
                 <Route path="/admin/posts/new" element={<CreatePostPage />} />
                 <Route path="/admin/posts/:id/edit" element={<EditPostPage />} />
-                <Route path="/profile" element={<ProfilePage />} />
-                <Route path="/profile/edit" element={<EditProfilePage />} />
+              <Route path="/profile" element={<ProfilePage />} />
+              <Route path="/profile/edit" element={<EditProfilePage />} />
+              <Route path="/user/:username" element={<UserProfilePage />} />
+              <Route path="/leaderboard" element={<LeaderboardPage />} />
                 <Route path="/notifications" element={<NotificationsPage />} />
                 <Route path="/chat" element={<ChatPage />} />
               <Route path="/moments" element={<MomentsPage />} />

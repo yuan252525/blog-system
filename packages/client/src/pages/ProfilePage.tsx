@@ -5,8 +5,9 @@ import { postsApi } from '../api/posts';
 import { PostCard } from '../components/PostCard';
 import { Pagination } from '../components/Pagination';
 import { useTranslation } from '../i18n/context';
-import { Calendar, FileText, Edit3 } from 'lucide-react';
+import { Calendar, FileText, Edit3, Trophy } from 'lucide-react';
 import type { Post } from '../types';
+import { GamificationCard } from '../components/GamificationCard';
 
 export function ProfilePage() {
   const { user } = useAuth();
@@ -19,7 +20,7 @@ export function ProfilePage() {
   useEffect(() => {
     setLoading(true);
     postsApi
-      .getList({ page, limit: 10, status: undefined })
+      .getList({ authorId: user.id, page, limit: 10 })
       .then((res) => {
         setPosts(res.data);
         setTotalPages(res.meta.totalPages);
@@ -72,7 +73,7 @@ export function ProfilePage() {
             {user.bio && (
               <p className="mt-3 text-sm text-neutral-600 leading-relaxed">{user.bio}</p>
             )}
-            <div className="mt-4 flex items-center gap-5 text-sm text-neutral-500">
+            <div className="mt-4 flex flex-wrap items-center gap-5 text-sm text-neutral-500">
               <span className="flex items-center gap-1.5">
                 <FileText className="h-4 w-4 text-neutral-400" />
                 <strong className="text-neutral-700">{postCount?.posts ?? 0}</strong> {t('profile.totalPosts')}
@@ -81,9 +82,21 @@ export function ProfilePage() {
                 <Calendar className="h-4 w-4 text-neutral-400" />
                 {t('profile.memberSince')}: {memberSince}
               </span>
+              <Link
+                to="/leaderboard"
+                className="flex items-center gap-1.5 text-brand-600 hover:text-brand-700"
+              >
+                <Trophy className="h-4 w-4" />
+                {t('gamification.leaderboard')}
+              </Link>
             </div>
           </div>
         </div>
+      </div>
+
+      {/* 成长体系 */}
+      <div className="mb-8">
+        <GamificationCard />
       </div>
 
       {/* My posts */}

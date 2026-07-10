@@ -10,6 +10,9 @@ import type { Cache } from 'cache-manager';
 import { PrismaService } from '../../database/prisma.service.js';
 import { CreatePostDto, UpdatePostDto, QueryPostsDto } from './posts.dto.js';
 import type { RedisClient } from '../../redis/redis.module.js';
+import { GamificationService } from '../gamification/gamification.service.js';
+import { GAMIFICATION_POINTS } from '../gamification/gamification.constants.js';
+import { FollowService } from '../follow/follow.service.js';
 
 @Injectable()
 export class PostsService {
@@ -17,6 +20,8 @@ export class PostsService {
     private prisma: PrismaService,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     @Inject('REDIS_CLIENT') private redis: RedisClient,
+    private gamificationService: GamificationService,
+    private followService: FollowService,
   ) {}
 
   private generateSlug(title: string): string {
@@ -105,12 +110,11 @@ export class PostsService {
 
     if (authorId) {
       where.authorId = authorId;
+      if (query.status) {
+        where.status = query.status;
+      }
     } else {
       where.status = 'PUBLISHED';
-    }
-
-    if (query.status && authorId) {
-      where.status = query.status;
     }
 
     if (query.search) {
@@ -270,6 +274,17 @@ export class PostsService {
 
     // 缓存失效
     await this.clearListCaches();
+
+    // 发布公开文章奖励积分（异常不影响发布主流程）
+    if (dto.status === 'PUBLISHED') {
+      await this.gamificationService.safeAwardPoints(authorId, GAMIFICATION_POINTS.POST);
+      // 通知作者的粉丝：发布了新文章（异常不影响发布主流程）
+      await this.followService.notifyNewContent(authorId, {
+        type: 'NEW_POST',
+        postId: post.id,
+        message: `发布了新文章：${post.title}`,
+      });
+    }
 
     return {
       ...post,

@@ -5,6 +5,10 @@ export interface User {
   avatar: string | null;
   bio: string | null;
   createdAt?: string;
+  points: number;
+  level: number;
+  lastCheckIn: string | null;
+  checkInStreak: number;
 }
 
 export interface LoginRequest {

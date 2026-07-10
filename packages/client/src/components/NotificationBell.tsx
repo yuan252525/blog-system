@@ -85,6 +85,12 @@ export function NotificationBell() {
 
   // 获取通知链接
   const getNotificationLink = (notif: Notification) => {
+    if (notif.type === 'FOLLOW' && notif.actor?.username) {
+      return `/user/${notif.actor.username}`;
+    }
+    if (notif.type === 'NEW_MOMENT') {
+      return '/moments';
+    }
     if (notif.type === 'CHAT_MENTION') {
       return notif.commentId ? `/chat?room=${notif.commentId}` : '/chat';
     }
@@ -109,6 +115,14 @@ export function NotificationBell() {
         return '👍';
       case 'CHAT_MENTION':
         return '📢';
+      case 'BADGE_EARNED':
+        return '🏅';
+      case 'FOLLOW':
+        return '👤';
+      case 'NEW_POST':
+        return '📝';
+      case 'NEW_MOMENT':
+        return '✨';
       default:
         return '🔔';
     }

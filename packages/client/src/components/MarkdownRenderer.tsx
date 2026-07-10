@@ -1,4 +1,5 @@
 import ReactMarkdown, { type Components } from 'react-markdown';
+import { type ReactNode } from 'react';
 import remarkGfm from 'remark-gfm';
 import rehypeHighlight from 'rehype-highlight';
 import rehypeSanitize, { defaultSchema } from 'rehype-sanitize';
@@ -29,12 +30,23 @@ interface MarkdownRendererProps {
   content: string;
 }
 
+// 递归提取 React 子节点中的纯文本（用于从 mermaid 代码块拿到原始源码，避免丢失换行）
+function extractText(node: ReactNode): string {
+  if (node == null || typeof node === 'boolean') return '';
+  if (typeof node === 'string' || typeof node === 'number') return String(node);
+  if (Array.isArray(node)) return node.map(extractText).join('');
+  if (typeof node === 'object' && 'props' in node) {
+    return extractText((node as { props?: { children?: ReactNode } }).props?.children);
+  }
+  return '';
+}
+
 // 自定义渲染：```mermaid 代码块渲染为流程图，其余代码块保持默认高亮
 const components: Components = {
   code({ node: _node, className, children, ...props }) {
     const match = /language-(\w+)/.exec(className || '');
     if (match?.[1] === 'mermaid') {
-      const code = String(children ?? '').replace(/\n$/, '');
+      const code = extractText(children).replace(/\n$/, '');
       return <MermaidDiagram code={code} />;
     }
     return (
@@ -43,12 +55,13 @@ const components: Components = {
       </code>
     );
   },
-  // mermaid 块不再套用 <pre> 的代码框样式
+  // mermaid 块由自定义组件渲染，不再套用 <pre> 的代码框样式
   pre({ node: _pre, children }) {
     const child = Array.isArray(children) ? children[0] : children;
-    const cls =
-      ((child as { props?: { className?: string } } | null)?.props?.className ?? '') || '';
-    if (cls.includes('language-mermaid')) return <>{children}</>;
+    if (child && typeof child === 'object' && 'type' in child) {
+      const t = (child as { type?: unknown }).type;
+      if (t === MermaidDiagram) return <>{children}</>;
+    }
     return <pre>{children}</pre>;
   },
 };
@@ -58,7 +71,7 @@ export function MarkdownRenderer({ content }: MarkdownRendererProps) {
     <article className="prose prose-neutral max-w-none">
       <ReactMarkdown
         remarkPlugins={[remarkGfm]}
-        rehypePlugins={[[rehypeSanitize, sanitizeSchema], rehypeHighlight]}
+        rehypePlugins={[[rehypeSanitize, sanitizeSchema], [rehypeHighlight, { ignoreMissing: true }]]}
         components={components}
       >
         {content}

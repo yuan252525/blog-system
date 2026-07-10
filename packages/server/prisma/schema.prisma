@@ -33,6 +33,18 @@ model User {
   momentComments     MomentComment[]    @relation("MomentCommentAuthor")
   momentCommentReplies MomentComment[]  @relation("MomentCommentReplyTo")
 
+  // ===== 成长体系（积分 / 等级 / 签到）=====
+  points            Int         @default(0) @map("points")
+  level             Int         @default(1) @map("level")
+  lastCheckIn       DateTime?   @map("last_check_in")
+  checkInStreak     Int         @default(0) @map("check_in_streak")
+  checkIns          CheckIn[]
+  badges            UserBadge[]
+
+  // ===== 关注关系 =====
+  followers         Follow[]        @relation("Following")
+  following         Follow[]        @relation("Follower")
+
   @@map("users")
 }
 
@@ -343,4 +355,58 @@ model MomentComment {
   @@index([momentId, createdAt])
   @@index([userId])
   @@map("moment_comments")
+}
+
+// ========== 成长体系（积分 / 签到 / 徽章）==========
+
+model CheckIn {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  date      DateTime @map("date") // 归一化到当天 00:00，用于每日唯一约束
+  createdAt DateTime @default(now()) @map("created_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, date])
+  @@index([userId])
+  @@map("check_ins")
+}
+
+model Badge {
+  id          String      @id @default(uuid())
+  key         String      @unique @map("key") // 例如 first_post
+  name        String
+  description String?
+  icon        String? // emoji 图标
+  awardedUsers UserBadge[]
+
+  @@map("badges")
+}
+
+model UserBadge {
+  id        String   @id @default(uuid())
+  userId    String   @map("user_id")
+  badgeId   String   @map("badge_id")
+  earnedAt  DateTime @default(now()) @map("earned_at")
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  badge     Badge    @relation(fields: [badgeId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, badgeId])
+  @@index([userId])
+  @@map("user_badges")
+}
+
+// ========== 关注关系 ==========
+
+model Follow {
+  id         String   @id @default(uuid())
+  followerId String   @map("follower_id")
+  followingId String   @map("following_id")
+  createdAt  DateTime @default(now()) @map("created_at")
+  follower   User     @relation("Follower", fields: [followerId], references: [id], onDelete: Cascade)
+  following  User     @relation("Following", fields: [followingId], references: [id], onDelete: Cascade)
+
+  @@unique([followerId, followingId])
+  @@index([followerId])
+  @@index([followingId])
+  @@map("follows")
 }

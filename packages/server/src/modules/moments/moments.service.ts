@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, ForbiddenException, BadRequestException } from '@nestjs/common';
 import { PrismaService } from '../../database/prisma.service.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
+import { FollowService } from '../follow/follow.service.js';
 import type { CreateMomentDto, CommentMomentDto, QueryMomentsDto } from './moments.dto.js';
 
 @Injectable()
@@ -8,6 +9,7 @@ export class MomentsService {
   constructor(
     private prisma: PrismaService,
     private notificationsService: NotificationsService,
+    private followService: FollowService,
   ) {}
 
   private getMomentInclude() {
@@ -39,6 +41,13 @@ export class MomentsService {
         authorId,
       },
       include: this.getMomentInclude(),
+    });
+
+    // 通知作者的粉丝：发布了新动态（异常不影响发布主流程）
+    await this.followService.notifyNewContent(authorId, {
+      type: 'NEW_MOMENT',
+      momentId: moment.id,
+      message: '发布了新动态',
     });
 
     return { ...moment, likedByMe: false };

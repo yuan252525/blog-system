@@ -4,7 +4,11 @@ export type NotificationType =
   | 'COMMENT_LIKE'
   | 'CHAT_MENTION'
   | 'MOMENT_LIKE'
-  | 'MOMENT_COMMENT';
+  | 'MOMENT_COMMENT'
+  | 'BADGE_EARNED'
+  | 'FOLLOW'
+  | 'NEW_POST'
+  | 'NEW_MOMENT';
 
 export interface Notification {
   id: string;

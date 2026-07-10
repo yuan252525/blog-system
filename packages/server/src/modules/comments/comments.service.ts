@@ -3,6 +3,8 @@ import { PrismaService } from '../../database/prisma.service.js';
 import { CreateCommentDto, UpdateCommentDto } from './comments.dto.js';
 import { NotificationsService } from '../notifications/notifications.service.js';
 import { NotificationsGateway } from '../notifications/notifications.gateway.js';
+import { GamificationService } from '../gamification/gamification.service.js';
+import { GAMIFICATION_POINTS } from '../gamification/gamification.constants.js';
 
 const commentInclude = {
   user: { select: { id: true, username: true, avatar: true } },
@@ -19,6 +21,7 @@ export class CommentsService {
     private notificationsService: NotificationsService,
     @Inject(forwardRef(() => NotificationsGateway))
     private notificationsGateway: NotificationsGateway,
+    private gamificationService: GamificationService,
   ) {}
 
   async findByPostId(postId: string, currentUserId?: string) {
@@ -129,6 +132,9 @@ export class CommentsService {
         this.logger.error('Failed to create comment notification', err);
       }
     }
+
+    // 发表评论奖励积分（异常不影响评论主流程）
+    await this.gamificationService.safeAwardPoints(userId, GAMIFICATION_POINTS.COMMENT);
 
     return comment;
   }

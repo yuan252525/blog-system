@@ -46,6 +46,10 @@ export class AuthService {
         email: true,
         avatar: true,
         bio: true,
+        points: true,
+        level: true,
+        lastCheckIn: true,
+        checkInStreak: true,
       },
     });
 
@@ -54,7 +58,13 @@ export class AuthService {
       username: user.username,
     });
 
-    return { accessToken, user };
+    return {
+      accessToken,
+      user: {
+        ...user,
+        lastCheckIn: user.lastCheckIn ? user.lastCheckIn.toISOString() : null,
+      },
+    };
   }
 
   async login(dto: LoginDto) {
@@ -84,6 +94,10 @@ export class AuthService {
         email: user.email,
         avatar: user.avatar,
         bio: user.bio,
+        points: user.points,
+        level: user.level,
+        lastCheckIn: user.lastCheckIn ? user.lastCheckIn.toISOString() : null,
+        checkInStreak: user.checkInStreak,
       },
     };
   }
@@ -124,6 +138,10 @@ export class AuthService {
         avatar: true,
         bio: true,
         createdAt: true,
+        points: true,
+        level: true,
+        lastCheckIn: true,
+        checkInStreak: true,
         _count: { select: { posts: true } },
       },
     });
@@ -132,7 +150,10 @@ export class AuthService {
       throw new UnauthorizedException('User not found');
     }
 
-    return user;
+    return {
+      ...user,
+      lastCheckIn: user.lastCheckIn ? user.lastCheckIn.toISOString() : null,
+    };
   }
 
   async updateProfile(userId: string, dto: UpdateProfileDto) {
@@ -157,9 +178,16 @@ export class AuthService {
         avatar: true,
         bio: true,
         createdAt: true,
+        points: true,
+        level: true,
+        lastCheckIn: true,
+        checkInStreak: true,
       },
     });
 
-    return user;
+    return {
+      ...user,
+      lastCheckIn: user.lastCheckIn ? user.lastCheckIn.toISOString() : null,
+    };
   }
 }

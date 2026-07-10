@@ -7,6 +7,8 @@ import { NotificationBell } from './NotificationBell';
 import { useMomentsNew } from '../contexts/MomentsNewContext';
 import { ThemeToggle } from './ThemeToggle';
 import { ConfirmDialog } from './ConfirmDialog';
+import { NavbarCheckIn } from './NavbarCheckIn';
+import { Trophy } from 'lucide-react';
 import { Menu, X, User, Bell, Feather } from 'lucide-react';
 
 export function Navbar() {
@@ -30,11 +32,11 @@ export function Navbar() {
     <>
       <nav className="sticky top-0 z-50 border-b border-line bg-surface/85 backdrop-blur-md">
         <div className="container mx-auto max-w-6xl px-4">
-          <div className="flex h-16 items-center justify-between">
+          <div className="flex h-16 items-center justify-between gap-2">
             {/* Logo */}
             <Link
               to="/"
-              className="group flex items-center gap-2.5 font-bold tracking-tight transition-opacity hover:opacity-80"
+              className="group flex shrink-0 items-center gap-2.5 font-bold tracking-tight transition-opacity hover:opacity-80"
             >
               <span className="grid h-8 w-8 place-items-center rounded bg-brand-600 text-white">
                 <Feather className="h-4 w-4" />
@@ -45,52 +47,62 @@ export function Navbar() {
             </Link>
 
             {/* Desktop nav */}
-            <div className="hidden items-center gap-1 md:flex">
-              <Link
-                to="/"
-                className="rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-              >
-                {t('nav.home')}
-              </Link>
+            <div className="hidden min-w-0 flex-1 items-center lg:flex">
+              {/* 主链接区：不够宽时横向滚动，绝不挤压 logo 与右侧操作区 */}
+              <div className="flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+                <Link
+                  to="/"
+                  className="shrink-0 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                >
+                  {t('nav.home')}
+                </Link>
 
-              {isAuthenticated ? (
-                <>
-                  <Link
-                    to="/admin/posts/new"
-                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
-                  >
-                    {t('nav.write')}
-                  </Link>
-                  <Link
-                    to="/chat"
-                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
-                  >
-                    {t('chat.title')}
-                  </Link>
-                  <Link
-                    to="/moments"
-                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
-                  >
-                    <span className="relative inline-flex">
-                      {t('nav.moments')}
-                      {hasNewMoments && (
-                        <span className="absolute -right-2 -top-0 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
-                      )}
-                    </span>
-                  </Link>
-                  <Link
-                    to="/world"
-                    className="flex items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
-                  >
-                    {t('nav.world')}
-                  </Link>
-                  <Link
-                    to="/admin/posts"
-                    className="rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-                  >
-                    {t('nav.dashboard')}
-                  </Link>
-                  <div className="ml-2 flex items-center gap-1 border-l border-line pl-2">
+                {isAuthenticated ? (
+                  <>
+                    <Link
+                      to="/admin/posts/new"
+                      className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                    >
+                      {t('nav.write')}
+                    </Link>
+                    <Link
+                      to="/chat"
+                      className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                    >
+                      {t('chat.title')}
+                    </Link>
+                    <Link
+                      to="/moments"
+                      className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                    >
+                      <span className="relative inline-flex">
+                        {t('nav.moments')}
+                        {hasNewMoments && (
+                          <span className="absolute -right-2 -top-0 h-2 w-2 rounded-full bg-red-500 ring-2 ring-surface" />
+                        )}
+                      </span>
+                    </Link>
+                    <Link
+                      to="/world"
+                      className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                    >
+                      {t('nav.world')}
+                    </Link>
+                    <Link
+                      to="/admin/posts"
+                      className="shrink-0 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                    >
+                      {t('nav.dashboard')}
+                    </Link>
+                  </>
+                ) : null}
+              </div>
+
+              {/* 右侧操作区：始终固定显示，含退出登录，不被滚动影响 */}
+              <div className="flex shrink-0 items-center gap-1 whitespace-nowrap border-l border-line pl-2">
+                {isAuthenticated ? (
+                  <>
+                    <NavbarCheckIn />
                     <LanguageSwitcher />
                     <ThemeToggle />
                     <NotificationBell />
@@ -101,39 +113,46 @@ export function Navbar() {
                     >
                       <User className="h-4 w-4" />
                     </Link>
-                    <span className="text-sm text-neutral-600">{user?.username}</span>
+                    <Link
+                      to="/leaderboard"
+                      className="rounded-md p-2 text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                      title={t('gamification.leaderboard')}
+                    >
+                      <Trophy className="h-4 w-4" />
+                    </Link>
+                    <span className="hidden shrink-0 text-sm text-neutral-600 xl:inline">{user?.username}</span>
                     <button
                       onClick={() => setLogoutDialogOpen(true)}
-                      className="cursor-pointer rounded-md px-3 py-1.5 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
+                      className="shrink-0 cursor-pointer rounded-md px-3 py-1.5 text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-700"
                     >
                       {t('nav.signOut')}
                     </button>
-                  </div>
-                </>
-              ) : (
-                <>
-                  <LanguageSwitcher />
-                  <ThemeToggle />
-                  <Link
-                    to="/login"
-                    className="rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-                  >
-                    {t('nav.signIn')}
-                  </Link>
-                  <Link
-                    to="/register"
-                    className="ml-2 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
-                  >
-                    {t('nav.getStarted')}
-                  </Link>
-                </>
-              )}
+                  </>
+                ) : (
+                  <>
+                    <LanguageSwitcher />
+                    <ThemeToggle />
+                    <Link
+                      to="/login"
+                      className="rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                    >
+                      {t('nav.signIn')}
+                    </Link>
+                    <Link
+                      to="/register"
+                      className="ml-2 rounded-md bg-neutral-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-neutral-800"
+                    >
+                      {t('nav.getStarted')}
+                    </Link>
+                  </>
+                )}
+              </div>
             </div>
 
             {/* Mobile menu button */}
             <button
               onClick={() => setMobileOpen(!mobileOpen)}
-              className="cursor-pointer rounded-md p-2 text-neutral-600 transition-colors hover:bg-neutral-100 md:hidden"
+              className="cursor-pointer rounded-md p-2 text-neutral-600 transition-colors hover:bg-neutral-100 lg:hidden"
               aria-label="Toggle menu"
             >
               {mobileOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
@@ -143,7 +162,7 @@ export function Navbar() {
 
         {/* Mobile menu */}
         {mobileOpen && (
-          <div className="animate-in slide-in-from-top-2 border-t border-line bg-surface duration-200 md:hidden">
+          <div className="animate-in slide-in-from-top-2 border-t border-line bg-surface duration-200 lg:hidden">
             <div className="container mx-auto space-y-1 px-4 py-3">
               <Link
                 to="/"
@@ -162,6 +181,9 @@ export function Navbar() {
                   >
                     {t('nav.write')}
                   </Link>
+                  <div onClick={closeMobile} className="overflow-x-auto">
+                    <NavbarCheckIn />
+                  </div>
                   <Link
                     to="/chat"
                     onClick={closeMobile}
@@ -194,6 +216,14 @@ export function Navbar() {
                     className="block rounded-md px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
                   >
                     {t('nav.dashboard')}
+                  </Link>
+                  <Link
+                    to="/leaderboard"
+                    onClick={closeMobile}
+                    className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                  >
+                    <Trophy className="h-4 w-4" />
+                    {t('gamification.leaderboard')}
                   </Link>
                   <Link
                     to="/notifications"

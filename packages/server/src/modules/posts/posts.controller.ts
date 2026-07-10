@@ -28,8 +28,16 @@ export class PostsController {
   @Get()
   @ApiOperation({ summary: '获取文章列表', description: '分页查询文章，支持搜索、按状态/标签筛选' })
   @ApiResponse({ status: 200, description: '返回分页文章列表' })
-  findAll(@Query() query: QueryPostsDto) {
-    return this.postsService.findAll(query);
+  findAll(@Req() req: Request) {
+    const query = req.query as Record<string, any>;
+    const authorId = typeof query.authorId === 'string' ? query.authorId : undefined;
+    const effectiveQuery = { ...query };
+    const uid = (req as AuthenticatedRequest).user?.id;
+    // 查看他人文章时仅返回公开文章，避免泄露草稿
+    if (authorId && uid && uid !== authorId) {
+      effectiveQuery.status = 'PUBLISHED';
+    }
+    return this.postsService.findAll(effectiveQuery as QueryPostsDto, authorId);
   }
 
   @Public()

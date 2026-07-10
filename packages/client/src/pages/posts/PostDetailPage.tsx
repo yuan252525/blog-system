@@ -142,7 +142,10 @@ export function PostDetailPage() {
 
         {/* Meta */}
         <div className="mt-6 flex flex-wrap items-center gap-4 text-sm text-neutral-500">
-          <div className="flex items-center gap-3">
+          <Link
+            to={`/user/${post.author.username}`}
+            className="flex items-center gap-3 hover:text-brand-600 transition-colors"
+          >
             <div className="h-9 w-9 rounded-full bg-brand-100 flex items-center justify-center text-sm font-bold text-brand-700 uppercase">
               {post.author.username.charAt(0)}
             </div>
@@ -150,7 +153,7 @@ export function PostDetailPage() {
               <p className="font-semibold text-neutral-900">{post.author.username}</p>
               <p className="text-xs text-neutral-400">{t('post.writtenBy')}</p>
             </div>
-          </div>
+          </Link>
           <span className="text-neutral-200 hidden sm:inline">|</span>
           <div className="flex items-center gap-5">
             {publishedDate && (
@@ -208,7 +211,10 @@ export function PostDetailPage() {
       {/* Author card */}
       <div className="container mx-auto max-w-3xl px-4 pb-12">
         <div className="rounded-2xl border border-neutral-200 bg-neutral-50 p-6 md:p-8">
-          <div className="flex items-center gap-4">
+          <Link
+            to={`/user/${post.author.username}`}
+            className="flex items-center gap-4 hover:opacity-80 transition-opacity"
+          >
             {post.author.avatar ? (
               <img src={post.author.avatar} alt="" className="h-14 w-14 rounded-2xl object-cover flex-shrink-0" />
             ) : (
@@ -224,7 +230,7 @@ export function PostDetailPage() {
                 <p className="text-sm text-neutral-400 mt-1">Writer on this blog</p>
               )}
             </div>
-          </div>
+          </Link>
         </div>
       </div>
 
