@@ -62,6 +62,11 @@ export class TransformInterceptor<T>
 
     return next.handle().pipe(
       map((data) => {
+        // 响应已由 controller 直接发送（如 RSS/Sitemap 的 XML），不再包装
+        if (response.headersSent) {
+          return data as unknown as ApiResponse<T>;
+        }
+
         // 如果返回值已经是 ApiResponse 格式，不再二次包装
         if (
           data &&

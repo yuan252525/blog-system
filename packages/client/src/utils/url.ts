@@ -6,7 +6,7 @@
  * 这样在本地、Docker、域名反代、局域网等不同访问方式下都能正确加载。
  * 若已经是绝对地址（历史数据），则原样返回。
  */
-const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
+export const API_BASE = import.meta.env.VITE_API_BASE_URL ?? 'http://localhost:3000/api/v1';
 
 export function resolveAssetUrl(url?: string | null): string | undefined {
   if (!url) return undefined;

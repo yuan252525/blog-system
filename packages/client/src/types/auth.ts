@@ -9,6 +9,8 @@ export interface User {
   level: number;
   lastCheckIn: string | null;
   checkInStreak: number;
+  role: 'USER' | 'ADMIN';
+  status?: 'ACTIVE' | 'BANNED';
 }
 
 export interface LoginRequest {

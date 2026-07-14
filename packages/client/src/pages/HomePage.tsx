@@ -5,9 +5,10 @@ import { categoriesApi, type Category } from '../api/categories';
 import { PostCard } from '../components/PostCard';
 import { Pagination } from '../components/Pagination';
 import { useTranslation } from '../i18n/context';
-import { Search, Hash, Folder, ChevronDown, ChevronUp } from 'lucide-react';
+import { Search, Hash, Folder, ChevronDown, ChevronUp, Eye, Flame, CalendarDays, History } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import type { Post, Tag } from '../types';
+import { getRecentPosts, type RecentPost } from '../utils/recentPosts';
 
 interface TagWithCount extends Tag {
   postCount: number;
@@ -26,6 +27,8 @@ export function HomePage() {
   const [loading, setLoading] = useState(true);
   const [categoriesExpanded, setCategoriesExpanded] = useState(false);
   const [tagsExpanded, setTagsExpanded] = useState(false);
+  const [popular, setPopular] = useState<Post[]>([]);
+  const [recent, setRecent] = useState<RecentPost[]>(() => getRecentPosts());
 
   const VISIBLE_CATEGORIES = 6;
   const VISIBLE_TAGS = 8;
@@ -55,6 +58,14 @@ export function HomePage() {
   useEffect(() => {
     tagsApi.getAll().then(setTags).catch(() => {});
     categoriesApi.getAll().then(setCategories).catch(() => {});
+    postsApi.getPopular(5).then(setPopular).catch(() => {});
+  }, []);
+
+  // 其他页面阅读后实时刷新「最近阅读」
+  useEffect(() => {
+    const refresh = () => setRecent(getRecentPosts());
+    window.addEventListener('blog:recent-updated', refresh);
+    return () => window.removeEventListener('blog:recent-updated', refresh);
   }, []);
 
   const handleSearch = (e: React.FormEvent) => {
@@ -216,6 +227,67 @@ export function HomePage() {
                 )}
               </div>
             )}
+
+            {/* Popular posts card */}
+            {popular.length > 0 && (
+              <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-1.5">
+                  <Flame className="h-3.5 w-3.5 text-orange-500" />
+                  {t('home.popular')}
+                </h3>
+                <ul className="space-y-3">
+                  {popular.map((p) => (
+                    <li key={p.id}>
+                      <Link
+                        to={`/posts/${p.slug}`}
+                        className="text-sm text-neutral-700 hover:text-brand-600 transition-colors line-clamp-2 leading-snug"
+                      >
+                        {p.title}
+                      </Link>
+                      <p className="mt-1 flex items-center gap-1 text-xs text-neutral-400">
+                        <Eye className="h-3 w-3" />
+                        {p.viewCount}
+                        {p.category && <span className="ml-2 truncate">· {p.category.name}</span>}
+                      </p>
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Recently read */}
+            {recent.length > 0 && (
+              <div className="rounded-2xl border border-neutral-100 bg-white p-6">
+                <h3 className="text-sm font-semibold text-neutral-900 mb-3 flex items-center gap-1.5">
+                  <History className="h-3.5 w-3.5 text-brand-500" />
+                  {t('home.recentTitle')}
+                </h3>
+                <ul className="space-y-3">
+                  {recent.map((p) => (
+                    <li key={p.slug}>
+                      <Link
+                        to={`/posts/${p.slug}`}
+                        className="text-sm text-neutral-700 hover:text-brand-600 transition-colors line-clamp-2 leading-snug"
+                      >
+                        {p.title}
+                      </Link>
+                      {p.author && (
+                        <p className="mt-1 text-xs text-neutral-400 truncate">· {p.author}</p>
+                      )}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {/* Archive link */}
+            <Link
+              to="/archive"
+              className="flex items-center justify-center gap-2 rounded-2xl border border-dashed border-neutral-200 bg-white px-6 py-4 text-sm font-medium text-neutral-600 hover:text-neutral-900 hover:border-neutral-300 transition-colors"
+            >
+              <CalendarDays className="h-4 w-4" />
+              {t('home.archiveLink')}
+            </Link>
 
             {/* Tags card */}
             {tags.length > 0 && (

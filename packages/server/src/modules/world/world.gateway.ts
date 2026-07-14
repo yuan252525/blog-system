@@ -447,9 +447,13 @@ export class WorldGateway implements OnGatewayConnection, OnGatewayDisconnect, O
 
   private userSocket(userId: string): Socket | undefined {
     const ids = this.userSockets.get(userId);
-    if (!ids || ids.size === 0) return undefined;
+    if (!ids || ids.size === 0 || !this.server) return undefined;
     const id = ids.values().next().value as string;
-    return this.server.sockets.sockets.get(id);
+    const srv: any = this.server;
+    // 兼容不同 Socket.IO 版本/命名空间：优先从 /world 命名空间取 socket
+    const ns = srv.of?.(WORLD_ROOM) ?? srv.sockets;
+    const sock = ns?.sockets?.get(id) ?? srv.sockets?.sockets?.get(id);
+    return sock;
   }
 
   private emitSkillPoints(userId: string, points: number): void {

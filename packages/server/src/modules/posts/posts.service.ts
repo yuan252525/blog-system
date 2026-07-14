@@ -420,4 +420,60 @@ export class PostsService {
       },
     });
   }
+
+  /** 热门文章：按阅读量降序 */
+  async getPopular(limit = 10) {
+    return this.prisma.post.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { viewCount: 'desc' },
+      take: limit,
+      include: {
+        author: { select: { id: true, username: true, avatar: true } },
+        category: { select: { id: true, name: true, slug: true } },
+        _count: { select: { comments: true, likes: true } },
+      },
+    });
+  }
+
+  /** 文章归档：按 年 -> 月 分组（仅公开文章） */
+  async getArchive() {
+    const posts = await this.prisma.post.findMany({
+      where: { status: 'PUBLISHED' },
+      orderBy: { publishedAt: 'desc' },
+      select: {
+        id: true,
+        title: true,
+        slug: true,
+        viewCount: true,
+        publishedAt: true,
+      },
+    });
+
+    const byYear: Record<number, Record<number, typeof posts>> = {};
+    for (const p of posts) {
+      const d = p.publishedAt ? new Date(p.publishedAt) : new Date();
+      const y = d.getFullYear();
+      const m = d.getMonth() + 1;
+      byYear[y] = byYear[y] ?? {};
+      byYear[y][m] = byYear[y][m] ?? [];
+      byYear[y][m].push(p);
+    }
+
+    return Object.keys(byYear)
+      .map(Number)
+      .sort((a, b) => b - a)
+      .map((year) => ({
+        year,
+        months: Object.keys(byYear[year])
+          .map(Number)
+          .sort((a, b) => b - a)
+          .map((month) => ({
+            year,
+            month,
+            yearMonth: `${year}-${String(month).padStart(2, '0')}`,
+            count: byYear[year][month].length,
+            posts: byYear[year][month],
+          })),
+      }));
+  }
 }

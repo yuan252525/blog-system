@@ -7,7 +7,8 @@ export function useAuth() {
 
   useEffect(() => {
     const token = localStorage.getItem('access_token');
-    if (token && !user) {
+    // 已登录但缺少 role（旧缓存或首次进入）时重新拉取 profile
+    if (token && (!user || !user.role)) {
       authApi
         .getProfile()
         .then((profile) => {

@@ -17,6 +17,9 @@ import { WorldModule } from './modules/world/world.module.js';
 import { GamificationModule } from './modules/gamification/gamification.module.js';
 import { FollowModule } from './modules/follow/follow.module.js';
 import { UsersModule } from './modules/users/users.module.js';
+import { AdminModule } from './modules/admin/admin.module.js';
+import { FeedsModule } from './modules/feeds/feeds.module.js';
+import { MusicModule } from './modules/music/music.module.js';
 import { JwtAuthGuard } from './common/guards/jwt-auth.guard.js';
 import { GlobalExceptionFilter } from './common/filters/global-exception.filter.js';
 import { TransformInterceptor } from './common/interceptors/transform.interceptor.js';
@@ -40,6 +43,9 @@ import { TransformInterceptor } from './common/interceptors/transform.intercepto
     GamificationModule,
     FollowModule,
     UsersModule,
+    AdminModule,
+    FeedsModule,
+    MusicModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: JwtAuthGuard },

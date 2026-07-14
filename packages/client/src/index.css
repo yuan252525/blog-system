@@ -279,3 +279,31 @@ body {
 .jit-pdf-copyright-notice {
   display: none !important;
 }
+
+/* ================================================================
+   打印样式：仅保留正文，隐藏导航/页脚/悬浮按钮/目录等
+   ================================================================ */
+@media print {
+  .no-print,
+  nav,
+  footer,
+  .fixed,
+  .sticky {
+    display: none !important;
+  }
+  body {
+    background: #fff;
+  }
+  main {
+    display: block !important;
+  }
+  .prose {
+    color: #000;
+  }
+  .prose a {
+    text-decoration: underline;
+  }
+  .container {
+    max-width: 100% !important;
+  }
+}

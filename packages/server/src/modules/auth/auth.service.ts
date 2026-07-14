@@ -34,11 +34,14 @@ export class AuthService {
 
     const passwordHash = await bcrypt.hash(dto.password, 10);
 
+    // 系统首个注册用户自动成为管理员
+    const userCount = await this.prisma.user.count();
     const user = await this.prisma.user.create({
       data: {
         username: dto.username,
         email: dto.email,
         passwordHash,
+        role: userCount === 0 ? 'ADMIN' : 'USER',
       },
       select: {
         id: true,
@@ -50,6 +53,7 @@ export class AuthService {
         level: true,
         lastCheckIn: true,
         checkInStreak: true,
+        role: true,
       },
     });
 
@@ -81,6 +85,10 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
+    if (user.status === 'BANNED') {
+      throw new UnauthorizedException('Your account has been banned');
+    }
+
     const accessToken = this.jwtService.sign({
       sub: user.id,
       username: user.username,
@@ -96,6 +104,7 @@ export class AuthService {
         bio: user.bio,
         points: user.points,
         level: user.level,
+        role: user.role,
         lastCheckIn: user.lastCheckIn ? user.lastCheckIn.toISOString() : null,
         checkInStreak: user.checkInStreak,
       },
@@ -140,6 +149,7 @@ export class AuthService {
         createdAt: true,
         points: true,
         level: true,
+        role: true,
         lastCheckIn: true,
         checkInStreak: true,
         _count: { select: { posts: true } },
@@ -180,6 +190,7 @@ export class AuthService {
         createdAt: true,
         points: true,
         level: true,
+        role: true,
         lastCheckIn: true,
         checkInStreak: true,
       },

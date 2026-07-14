@@ -1,5 +1,5 @@
 import apiClient from './client';
-import type { Post, PaginatedResponse, CreatePostRequest, UpdatePostRequest } from '../types';
+import type { Post, PaginatedResponse, CreatePostRequest, UpdatePostRequest, ArchiveGroup } from '../types';
 
 export const postsApi = {
   getList: (params?: Record<string, unknown>) =>
@@ -10,6 +10,12 @@ export const postsApi = {
 
   getRelatedPosts: (id: string) =>
     apiClient.get<unknown, Post[]>(`/posts/related/${id}`),
+
+  getPopular: (limit = 10) =>
+    apiClient.get<unknown, Post[]>('/posts/popular', { params: { limit } }),
+
+  getArchive: () =>
+    apiClient.get<unknown, ArchiveGroup[]>('/posts/archive'),
 
   create: (data: CreatePostRequest) =>
     apiClient.post<unknown, Post>('/posts', data),

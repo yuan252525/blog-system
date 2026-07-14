@@ -18,6 +18,8 @@ export function Navbar() {
   const { hasNew: hasNewMoments } = useMomentsNew();
   const [mobileOpen, setMobileOpen] = useState(false);
   const [logoutDialogOpen, setLogoutDialogOpen] = useState(false);
+  // 仅管理员可见后台入口
+  const isAdmin = user?.role === 'ADMIN';
 
   const handleLogoutConfirm = () => {
     logout();
@@ -59,12 +61,14 @@ export function Navbar() {
 
                 {isAuthenticated ? (
                   <>
-                    <Link
-                      to="/admin/posts/new"
-                      className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
-                    >
-                      {t('nav.write')}
-                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin/posts/new"
+                        className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
+                      >
+                        {t('nav.write')}
+                      </Link>
+                    )}
                     <Link
                       to="/chat"
                       className="flex shrink-0 items-center gap-1.5 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-brand-50 hover:text-brand-600"
@@ -88,12 +92,14 @@ export function Navbar() {
                     >
                       {t('nav.world')}
                     </Link>
-                    <Link
-                      to="/admin/posts"
-                      className="shrink-0 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
-                    >
-                      {t('nav.dashboard')}
-                    </Link>
+                    {isAdmin && (
+                      <Link
+                        to="/admin/posts"
+                        className="shrink-0 rounded-md px-3.5 py-2 text-sm font-medium text-neutral-600 transition-colors hover:bg-neutral-50 hover:text-neutral-900"
+                      >
+                        {t('nav.dashboard')}
+                      </Link>
+                    )}
                   </>
                 ) : null}
               </div>
@@ -174,13 +180,15 @@ export function Navbar() {
 
               {isAuthenticated ? (
                 <>
-                  <Link
-                    to="/admin/posts/new"
-                    onClick={closeMobile}
-                    className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
-                  >
-                    {t('nav.write')}
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/posts/new"
+                      onClick={closeMobile}
+                      className="flex items-center gap-2 rounded-md px-3 py-2.5 text-sm font-medium text-brand-600 hover:bg-brand-50"
+                    >
+                      {t('nav.write')}
+                    </Link>
+                  )}
                   <div onClick={closeMobile} className="overflow-x-auto">
                     <NavbarCheckIn />
                   </div>
@@ -210,13 +218,15 @@ export function Navbar() {
                   >
                     {t('nav.world')}
                   </Link>
-                  <Link
-                    to="/admin/posts"
-                    onClick={closeMobile}
-                    className="block rounded-md px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
-                  >
-                    {t('nav.dashboard')}
-                  </Link>
+                  {isAdmin && (
+                    <Link
+                      to="/admin/posts"
+                      onClick={closeMobile}
+                      className="block rounded-md px-3 py-2.5 text-sm font-medium text-neutral-700 hover:bg-neutral-50"
+                    >
+                      {t('nav.dashboard')}
+                    </Link>
+                  )}
                   <Link
                     to="/leaderboard"
                     onClick={closeMobile}

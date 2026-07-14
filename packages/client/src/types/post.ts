@@ -48,6 +48,27 @@ export interface CreatePostRequest {
   categoryId?: string;
 }
 
+export interface ArchivePost {
+  id: string;
+  title: string;
+  slug: string;
+  viewCount: number;
+  publishedAt: string | null;
+}
+
+export interface ArchiveMonth {
+  year: number;
+  month: number;
+  yearMonth: string;
+  count: number;
+  posts: ArchivePost[];
+}
+
+export interface ArchiveGroup {
+  year: number;
+  months: ArchiveMonth[];
+}
+
 export interface UpdatePostRequest extends Partial<CreatePostRequest> {}
 
 export interface PaginatedResponse<T> {

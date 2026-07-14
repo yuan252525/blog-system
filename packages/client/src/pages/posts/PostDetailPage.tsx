@@ -5,11 +5,18 @@ import { MarkdownRenderer } from '../../components/MarkdownRenderer';
 import { CommentSection } from '../../components/CommentSection';
 import { LikeButton } from '../../components/LikeButton';
 import { LazyImage } from '../../components/LazyImage';
+import { Toc } from '../../components/Toc';
 import { useTranslation } from '../../i18n/context';
 import { getReadingTime } from '../../utils/readingTime';
-import { Calendar, Eye, ArrowLeft, Clock, X, FileText } from 'lucide-react';
+import { extractExcerpt } from '../../utils/excerpt';
+import { resolveAssetUrl } from '../../utils/url';
+import { buildToc, type TocItem } from '../../utils/toc';
+import { addRecentPost } from '../../utils/recentPosts';
+import { useSeo } from '../../hooks/useSeo';
+import { Calendar, Eye, ArrowLeft, Clock, X, FileText, Link2, Printer } from 'lucide-react';
 import type { Post } from '../../types';
 import { PdfViewer } from '../../components/PdfViewer';
+import { toast } from '../../components/ui/toast';
 
 export function PostDetailPage() {
   const { slug } = useParams<{ slug: string }>();
@@ -20,6 +27,21 @@ export function PostDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [previewOpen, setPreviewOpen] = useState(false);
+  const [toc, setToc] = useState<TocItem[]>([]);
+  const [progress, setProgress] = useState(0);
+  const [fontScale, setFontScale] = useState<number>(() => {
+    const saved = Number(localStorage.getItem('blog-reader-font'));
+    return Number.isFinite(saved) && saved >= 0 && saved <= 3 ? saved : 1;
+  });
+
+  const handleCopyLink = useCallback(() => {
+    navigator.clipboard
+      ?.writeText(window.location.href)
+      .then(() => toast({ title: t('post.linkCopied'), variant: 'success' }))
+      .catch(() => toast({ title: t('common.copyFailed'), variant: 'error' }));
+  }, [t]);
+
+  const readerFontClass = ['prose-sm', 'prose-base', 'prose-lg', 'prose-xl'][fontScale];
 
   // 滚动到指定评论（处理 #comment-xxx hash）
   const scrollToComment = useCallback(() => {
@@ -50,6 +72,14 @@ export function PostDetailPage() {
       .getBySlug(slug)
       .then((p) => {
         setPost(p);
+        setToc(buildToc(p.content));
+        addRecentPost({
+          slug: p.slug,
+          title: p.title,
+          coverImage: p.coverImage,
+          author: p.author.username,
+          viewedAt: Date.now(),
+        });
         postsApi
           .getRelatedPosts(p.id)
           .then((rp) => setRelatedPosts(rp as unknown as Post[]))
@@ -65,6 +95,33 @@ export function PostDetailPage() {
       scrollToComment();
     }
   }, [loading, post, scrollToComment]);
+
+  // 阅读进度条
+  useEffect(() => {
+    const onScroll = () => {
+      const el = document.documentElement;
+      const max = el.scrollHeight - el.clientHeight;
+      setProgress(max > 0 ? Math.min(100, Math.max(0, (el.scrollTop / max) * 100)) : 0);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    onScroll();
+    return () => window.removeEventListener('scroll', onScroll);
+  }, [slug]);
+
+  // 持久化阅读字号
+  useEffect(() => {
+    localStorage.setItem('blog-reader-font', String(fontScale));
+  }, [fontScale]);
+
+  // SEO / 社交分享卡片 meta
+  useSeo({
+    title: post?.title,
+    description: post ? post.summary || extractExcerpt(post.content) : undefined,
+    image: post ? resolveAssetUrl(post.coverImage) : undefined,
+    url: typeof window !== 'undefined' ? window.location.href : undefined,
+    type: 'article',
+    publishedTime: post?.publishedAt ? post.publishedAt : undefined,
+  });
 
   if (loading) {
     return (
@@ -114,6 +171,14 @@ export function PostDetailPage() {
 
   return (
     <article className="page-enter">
+      {/* 阅读进度条 */}
+      <div className="no-print fixed inset-x-0 top-0 z-[55] h-0.5 bg-transparent">
+        <div
+          className="h-full bg-brand-600 transition-[width] duration-150 ease-out"
+          style={{ width: `${progress}%` }}
+        />
+      </div>
+
       {/* Hero */}
       <header className="container mx-auto max-w-3xl px-4 pt-10 md:pt-16 pb-8">
         {/* Tags + Category */}
@@ -174,11 +239,56 @@ export function PostDetailPage() {
         </div>
 
         {/* Action buttons */}
-        <div className="mt-5 flex flex-wrap items-center gap-3">
+        <div className="no-print mt-5 flex flex-wrap items-center gap-3">
           <LikeButton
             postId={post.id}
             initialCount={post._count?.likes ?? 0}
           />
+          <button
+            type="button"
+            onClick={handleCopyLink}
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-400 hover:text-brand-600 cursor-pointer"
+          >
+            <Link2 className="h-4 w-4" />
+            {t('post.copyLink')}
+          </button>
+          <button
+            type="button"
+            onClick={() => window.print()}
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition-colors hover:border-brand-400 hover:text-brand-600 cursor-pointer"
+          >
+            <Printer className="h-4 w-4" />
+            {t('post.print')}
+          </button>
+          <div className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-white px-1.5 py-1">
+            <button
+              type="button"
+              onClick={() => setFontScale((s) => Math.max(0, s - 1))}
+              title={t('post.decreaseFont')}
+              aria-label={t('post.decreaseFont')}
+              className="grid h-7 w-7 place-items-center rounded-full text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            >
+              A-
+            </button>
+            <button
+              type="button"
+              onClick={() => setFontScale(1)}
+              title={t('post.resetFont')}
+              aria-label={t('post.resetFont')}
+              className="grid h-7 w-7 place-items-center rounded-full text-sm text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            >
+              A
+            </button>
+            <button
+              type="button"
+              onClick={() => setFontScale((s) => Math.min(3, s + 1))}
+              title={t('post.increaseFont')}
+              aria-label={t('post.increaseFont')}
+              className="grid h-7 w-7 place-items-center rounded-full text-base font-semibold text-neutral-500 transition-colors hover:bg-neutral-100 hover:text-neutral-900"
+            >
+              A+
+            </button>
+          </div>
           {post.pdfUrl && (
             <button
               type="button"
@@ -191,6 +301,13 @@ export function PostDetailPage() {
           )}
         </div>
       </header>
+
+      {/* 文章目录 */}
+      {toc.length > 0 && (
+        <div className="container mx-auto max-w-3xl px-4 pb-8">
+          <Toc items={toc} />
+        </div>
+      )}
 
       {/* Cover image */}
       {post.coverImage && (
@@ -205,7 +322,7 @@ export function PostDetailPage() {
 
       {/* Content */}
       <div className="container mx-auto max-w-3xl px-4 pb-12">
-        <MarkdownRenderer content={post.content} />
+        <MarkdownRenderer content={post.content} sizeClass={readerFontClass} />
       </div>
 
       {/* Author card */}

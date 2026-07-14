@@ -58,9 +58,10 @@ async function bootstrap() {
     .addTag('tags', '标签管理')
     .addTag('uploads', '文件上传（断点续传）')
     .addTag('comments', '评论管理')
-    .addTag('likes', '点赞管理')
-    .addTag('notifications', '消息通知')
-    .build();
+  .addTag('likes', '点赞管理')
+  .addTag('notifications', '消息通知')
+  .addTag('feeds', 'RSS / Sitemap')
+  .build();
 
   const document = SwaggerModule.createDocument(app, config);
   SwaggerModule.setup('docs', app, document, {
